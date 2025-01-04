@@ -1,0 +1,139 @@
+import React from "react";
+import { Input, Label, Select, Textarea } from "@roketid/windmill-react-ui";
+
+const PaymentForm = ({
+  editingPayment,
+  customers,
+  tokens,
+  onChange,
+}: {
+  editingPayment: any;
+  customers: { id: number; name: string }[];
+  tokens: { id: number; tokenCode: string }[];
+  onChange: (field: string, value: any) => void;
+}) => {
+  return (
+    <div className="p-0 space-y-4">
+      {/* Section: Customer Details */}
+      <Section title="Customer Details">
+        {/* Customer */}
+        <FormField label="Customer">
+          <Select
+            value={editingPayment?.customerId || ""}
+            onChange={(e) => onChange("customerId", e.target.value)}
+          >
+            <option value="">Select a Customer...</option>
+            {customers.map((customer) => (
+              <option key={customer.id} value={customer.id}>
+                {customer.name}
+              </option>
+            ))}
+          </Select>
+        </FormField>
+
+        {/* Token */}
+        <FormField label="Token">
+          <Select
+            value={editingPayment?.tokenId || ""}
+            onChange={(e) => onChange("tokenId", e.target.value)}
+          >
+            <option value="">Select a Token...</option>
+            {tokens.map((token) => (
+              <option key={token.id} value={token.id}>
+                {token.tokenCode}
+              </option>
+            ))}
+          </Select>
+        </FormField>
+      </Section>
+
+      {/* Section: Payment Details */}
+      <Section title="Payment Details">
+        {/* Payment Method */}
+        <FormField label="Payment Method">
+          <Select
+            value={editingPayment?.paymentMethod || ""}
+            onChange={(e) => onChange("paymentMethod", e.target.value)}
+          >
+            <option value="">Select a Payment Method</option>
+            <option value="BANK_TRANSFER">Bank Transfer</option>
+            <option value="CASH">Cash</option>
+            <option value="CARD">Card</option>
+            <option value="QRIS">QRIS</option>
+            <option value="OTHER">Other</option>
+          </Select>
+        </FormField>
+
+        {/* Payment Status */}
+        <FormField label="Payment Status">
+          <Select
+            value={editingPayment?.paymentStatus || ""}
+            onChange={(e) => onChange("paymentStatus", e.target.value)}
+          >
+            <option value="">Select a Payment Status</option>
+            <option value="SUCCESS">Success</option>
+            <option value="PENDING">Pending</option>
+            <option value="FAILED">Failed</option>
+          </Select>
+        </FormField>
+
+        {/* Amount Paid */}
+        <FormField label="Amount Paid">
+          <Input
+            type="number"
+            value={editingPayment?.amountPaid || ""}
+            onChange={(e) => onChange("amountPaid", parseFloat(e.target.value))}
+          />
+        </FormField>
+
+        {/* Energy Usage */}
+        <FormField label="Energy Usage">
+          <Input
+            type="number"
+            value={editingPayment?.energyUsage || ""}
+            onChange={(e) => onChange("energyUsage", parseFloat(e.target.value))}
+          />
+        </FormField>
+
+        {/* Total */}
+        <FormField label="Total">
+          <Input
+            type="number"
+            value={editingPayment?.total || ""}
+            onChange={(e) => onChange("total", parseFloat(e.target.value))}
+          />
+        </FormField>
+      </Section>
+
+      {/* Section: Additional Information */}
+      <Section title="Additional Information">
+        {/* Note */}
+        <FormField label="Note">
+          <Textarea
+            value={editingPayment?.note || ""}
+            onChange={(e) => onChange("note", e.target.value)}
+          />
+        </FormField>
+      </Section>
+    </div>
+  );
+};
+
+export default PaymentForm;
+
+/* Helper Components */
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="mt-4 border-2 p-2 space-y-2 rounded-lg">
+    <h3 className="text-lg font-semibold mb-2">{title}</h3>
+    <hr />
+    <div className="grid grid-cols-1 gap-2">{children}</div>
+  </div>
+);
+
+const FormField = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <Label className="col-span-1">
+    <span>{label}</span>
+    <div className="mt-1">{children}</div>
+  </Label>
+);
+

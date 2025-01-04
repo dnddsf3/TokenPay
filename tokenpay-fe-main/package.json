@@ -1,0 +1,47 @@
+{
+  "name": "windmill-dashboard-nextjs-typescript",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "cross-env NODE_OPTIONS=--openssl-legacy-provider PORT=3001 next dev",
+    "build": "cross-env NODE_OPTIONS=--openssl-legacy-provider next build",
+    "start": "cross-env NODE_OPTIONS=--openssl-legacy-provider PORT=3001 next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@copilotkit/react-core": "^1.3.4",
+    "@copilotkit/react-textarea": "^1.3.4",
+    "@copilotkit/react-ui": "^1.4.7",
+    "@copilotkit/runtime": "^1.3.4",
+    "@heroicons/react": "^2.2.0",
+    "@types/js-cookie": "^3.0.6",
+    "@types/react-dom": "^18.3.5",
+    "chart.js": "^3.6.1",
+    "classnames": "^2.3.1",
+    "cross-env": "^7.0.3",
+    "js-cookie": "^3.0.5",
+    "next": "^15.1.0",
+    "react": "^18.3.1",
+    "react-chartjs-2": "^4.0.0",
+    "react-dom": "^18.3.1",
+    "react-form-stepper": "^2.0.3",
+    "react-stepper-horizontal": "^1.0.11",
+    "react-toastify": "^10.0.6",
+    "typescript": "^0.0.1-security",
+    "zod": "^3.23.8",
+    "zustand": "^4.4.6"
+  },
+  "devDependencies": {
+    "@roketid/windmill-react-ui": "^0.1.1",
+    "@svgr/webpack": "^6.1.0",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.16",
+    "autoprefixer": "^10.4.2",
+    "cssnano": "^5.0.12",
+    "eslint": "7.32.0",
+    "eslint-config-next": "11.1.2",
+    "postcss": "^8.4.6",
+    "tailwindcss": "^3.0.22",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,463 @@
+import React, { useState, useEffect } from "react";
+
+import PageTitle from "example/components/Typography/PageTitle";
+import {
+  Table,
+  TableHeader,
+  TableCell,
+  TableBody,
+  TableRow,
+  TableFooter,
+  TableContainer,
+  Badge,
+  Button,
+  Pagination,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Input,
+  Label,
+  Select,
+} from "@roketid/windmill-react-ui";
+import { EditIcon, TrashIcon } from "icons";
+
+import Layout from "example/containers/Layout";
+import { useCustomerStore } from "hooks/customer/customer-store";
+import { CustomerCreateOrUpdateDTO, CustomerRetrieveDTO } from "hooks/customer/customer-schema";
+
+function CustomerTable() {
+  const [page, setPage] = useState(1);
+  const { customers, fetchCustomers, updateCustomer, addCustomer: createCustomer, deleteCustomer } = useCustomerStore();
+
+  const resultsPerPage = 10;
+  const totalResults = customers.length;
+  const [paginatedCustomers, setPaginatedCustomers] = useState<CustomerRetrieveDTO[]>([]);
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<CustomerCreateOrUpdateDTO | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<CustomerRetrieveDTO | null>(null);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredCustomers, setFilteredCustomers] = useState<CustomerRetrieveDTO[]>([]);
+
+  const [newCustomer, setNewCustomer] = useState<CustomerCreateOrUpdateDTO>({
+    name: "",
+    email: "",
+    phoneNumber: "",
+    address: "",
+    meterNumber: "",
+    tariffType: "PREPAID",
+    gencoId: 0,
+    customerType: "RESIDENTIAL",
+    customerStatus: "ACTIVE",
+    avatar: "",
+    note: "",
+    userId: 0,
+  });
+
+  const onPageChange = (p: number) => {
+    setPage(p);
+  };
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
+
+  useEffect(() => {
+    const startIndex = (page - 1) * resultsPerPage;
+    const endIndex = page * resultsPerPage;
+    setPaginatedCustomers(customers.slice(startIndex, endIndex));
+  }, [customers, page]);
+
+  useEffect(() => {
+    const startIndex = (page - 1) * resultsPerPage;
+    const endIndex = page * resultsPerPage;
+    setFilteredCustomers(
+      customers.filter((customer) =>
+        customer.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    );
+    setPaginatedCustomers(filteredCustomers.slice(startIndex, endIndex));
+  }, [customers, page, searchQuery]);
+
+  const openEditModal = (customer: CustomerRetrieveDTO) => {
+    setEditingCustomer({
+      id: customer.id,
+      name: customer.name,
+      email: customer.email,
+      phoneNumber: customer.phoneNumber,
+      address: customer.address || "none",
+      meterNumber: customer.meterNumber,
+      tariffType: customer.tariffType,
+      gencoId: customer.gencoId || 0,
+      customerType: customer.customerType,
+      customerStatus: customer.customerStatus,
+      avatar: customer.avatar || "none",
+      note: customer.note || "none",
+      userId: customer.userId || 0,
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingCustomer(null);
+  };
+
+  const openCreateModal = () => {
+    setIsCreateModalOpen(true);
+  };
+
+  const closeCreateModal = () => {
+    setIsCreateModalOpen(false);
+  };
+
+  const openDeleteModal = (customer: CustomerRetrieveDTO) => {
+    setCustomerToDelete(customer);
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setCustomerToDelete(null);
+    setIsDeleteModalOpen(false);
+  };
+
+  const handleUpdateCustomer = async () => {
+    if (!editingCustomer) return;
+    try {
+      await updateCustomer(editingCustomer?.id || 0, editingCustomer);
+      console.log('editingCustomer', editingCustomer)
+      closeEditModal();
+      fetchCustomers();
+    } catch (error) {
+      console.error("Failed to update customer:", error);
+    }
+  };
+
+  const handleCreateCustomer = async () => {
+    try {
+      await createCustomer(newCustomer);
+      closeCreateModal();
+      fetchCustomers();
+    } catch (error) {
+      console.error("Failed to create customer:", error);
+    }
+  };
+
+  const handleDeleteCustomer = async () => {
+    if (!customerToDelete) return;
+    try {
+      await deleteCustomer(customerToDelete.id);
+      closeDeleteModal();
+      fetchCustomers();
+    } catch (error) {
+      console.error("Failed to delete customer:", error);
+    }
+  };
+
+  //search
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setPage(1); // Reset to the first page on search
+  };
+
+  return (
+    <Layout>
+      <div className="flex items-center justify-between">
+        <PageTitle>Customer List</PageTitle>
+        <div className="flex items-center space-x-2">
+          <Input
+            className="mt-1 w-[300px]"
+            placeholder="Search by Name"
+            value={searchQuery}
+            onChange={handleSearch}
+          />
+          <Button onClick={openCreateModal} className="bg-red-500 hover:bg-red-600">
+            <span>+ Create Customer</span>
+          </Button>
+        </div>
+      </div>
+
+      <TableContainer className="mb-8">
+        <Table>
+          <TableHeader>
+            <tr>
+              <TableCell>ID</TableCell>
+              <TableCell>Name</TableCell>
+              <TableCell>Email</TableCell>
+              <TableCell>Phone</TableCell>
+              <TableCell>Meter Number</TableCell>
+              <TableCell>Tariff</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell className="text-right">Action</TableCell>
+            </tr>
+          </TableHeader>
+          <TableBody>
+            {filteredCustomers.slice((page - 1) * resultsPerPage, page * resultsPerPage).map((customer) => (
+              <TableRow key={customer.id}>
+                <TableCell>{customer.id}</TableCell>
+                <TableCell>{customer.name}</TableCell>
+                <TableCell>{customer.email}</TableCell>
+                <TableCell>{customer.phoneNumber}</TableCell>
+                <TableCell>{customer.meterNumber}</TableCell>
+                <TableCell>
+                  <Badge>{customer.tariffType}</Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge type={customer.customerStatus === "ACTIVE" ? "success" : "danger"}>
+                    {customer.customerStatus}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center space-x-4 justify-end">
+                    <Button layout="link" size="small" aria-label="Edit" onClick={() => openEditModal(customer)}>
+                      <EditIcon className="w-5 h-5" aria-hidden="true" />
+                    </Button>
+                    <Button layout="link" size="small" aria-label="Delete" onClick={() => openDeleteModal(customer)}>
+                      <TrashIcon className="w-5 h-5" aria-hidden="true" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <TableFooter>
+          <Pagination totalResults={totalResults} resultsPerPage={resultsPerPage} onChange={onPageChange} label="Table navigation" />
+        </TableFooter>
+      </TableContainer>
+
+      {/* Create Modal */}
+      <Modal isOpen={isCreateModalOpen} onClose={closeCreateModal}>
+        <ModalHeader>Create Customer</ModalHeader>
+        <ModalBody>
+          <Label>
+            <span>Name</span>
+            <Input
+              className="mt-1"
+              value={newCustomer.name}
+              onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+            />
+          </Label>
+          <Label>
+            <span>Email</span>
+            <Input
+              type="email"
+              className="mt-1"
+              value={newCustomer.email}
+              onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+            />
+          </Label>
+          <Label>
+            <span>Phone Number</span>
+            <Input
+              className="mt-1"
+              value={newCustomer.phoneNumber}
+              onChange={(e) => setNewCustomer({ ...newCustomer, phoneNumber: e.target.value })}
+            />
+          </Label>
+          <Label>
+            <span>Address</span>
+            <Input
+              className="mt-1"
+              value={newCustomer.address}
+              onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
+            />
+          </Label>
+          <Label>
+            <span>Meter Number</span>
+            <Input
+              className="mt-1"
+              value={newCustomer.meterNumber}
+              onChange={(e) => setNewCustomer({ ...newCustomer, meterNumber: e.target.value })}
+            />
+          </Label>
+          <Label>
+            <span>Tariff Type</span>
+            <Select
+              className="mt-1"
+              value={newCustomer.tariffType}
+              onChange={(e) => setNewCustomer({ ...newCustomer, tariffType: e.target.value })}
+            >
+              <option value="PREPAID">Prepaid</option>
+              <option value="POSTPAID">Postpaid</option>
+            </Select>
+          </Label>
+          <Label>
+            <span>Customer Type</span>
+            <Select
+              className="mt-1"
+              value={newCustomer.customerType}
+              onChange={(e) => setNewCustomer({ ...newCustomer, customerType: e.target.value })}
+            >
+              <option value="RESIDENTIAL">Residential</option>
+              <option value="COMMERCIAL">Commercial</option>
+              <option value="INDUSTRIAL">Industrial</option>
+            </Select>
+          </Label>
+          <Label>
+            <span>Customer Status</span>
+            <Select
+              className="mt-1"
+              value={newCustomer.customerStatus}
+              onChange={(e) => setNewCustomer({ ...newCustomer, customerStatus: e.target.value })}
+            >
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+            </Select>
+          </Label>
+          <Label>
+            <span>Avatar</span>
+            <Input
+              type="url"
+              className="mt-1"
+              value={newCustomer.avatar}
+              onChange={(e) => setNewCustomer({ ...newCustomer, avatar: e.target.value })}
+            />
+          </Label>
+          <Label>
+            <span>Note</span>
+            <Input
+              className="mt-1"
+              value={newCustomer.note}
+              onChange={(e) => setNewCustomer({ ...newCustomer, note: e.target.value })}
+            />
+          </Label>
+        </ModalBody>
+        <ModalFooter>
+          <Button layout="outline" onClick={closeCreateModal}>
+            Cancel
+          </Button>
+          <Button onClick={handleCreateCustomer}>Save</Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal isOpen={isEditModalOpen} onClose={closeEditModal}>
+        <ModalHeader>Edit Customer</ModalHeader>
+        <ModalBody className="flex flex-col space-y-2">
+          {/* Same fields as Create Modal but bound to `editingCustomer` */}
+          <Label>
+            <span>Name</span>
+            <Input
+              className="mt-1"
+              value={editingCustomer?.name || ""}
+              onChange={(e) => setEditingCustomer({ ...editingCustomer!, name: e.target.value })}
+            />
+          </Label>
+          <Label>
+            <span>Email</span>
+            <Input
+              type="email"
+              className="mt-1"
+              value={editingCustomer?.email || ""}
+              onChange={(e) => setEditingCustomer({ ...editingCustomer!, email: e.target.value })}
+            />
+          </Label>
+          <Label>
+            <span>Phone Number</span>
+            <Input
+              className="mt-1"
+              value={editingCustomer?.phoneNumber || ""}
+              onChange={(e) => setEditingCustomer({ ...editingCustomer!, phoneNumber: e.target.value })}
+            />
+          </Label>
+          <Label>
+            <span>Address</span>
+            <Input
+              className="mt-1"
+              value={editingCustomer?.address || ""}
+              onChange={(e) => setEditingCustomer({ ...editingCustomer!, address: e.target.value })}
+            />
+          </Label>
+          <Label>
+            <span>Meter Number</span>
+            <Input
+              className="mt-1"
+              value={editingCustomer?.meterNumber || ""}
+              onChange={(e) => setEditingCustomer({ ...editingCustomer!, meterNumber: e.target.value })}
+            />
+          </Label>
+          <Label>
+            <span>Tariff Type</span>
+            <Select
+              className="mt-1"
+              value={editingCustomer?.tariffType || ""}
+              onChange={(e) => setEditingCustomer({ ...editingCustomer!, tariffType: e.target.value })}
+            >
+              <option value="PREPAID">Prepaid</option>
+              <option value="POSTPAID">Postpaid</option>
+            </Select>
+          </Label>
+          <Label>
+            <span>Customer Type</span>
+            <Select
+              className="mt-1"
+              value={editingCustomer?.customerType || ""}
+              onChange={(e) => setEditingCustomer({ ...editingCustomer!, customerType: e.target.value })}
+            >
+              <option value="RESIDENTIAL">Residential</option>
+              <option value="COMMERCIAL">Commercial</option>
+              <option value="INDUSTRIAL">Industrial</option>
+            </Select>
+          </Label>
+          <Label>
+            <span>Customer Status</span>
+            <Select
+              className="mt-1"
+              value={editingCustomer?.customerStatus || ""}
+              onChange={(e) => setEditingCustomer({ ...editingCustomer!, customerStatus: e.target.value })}
+            >
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+            </Select>
+          </Label>
+          <Label>
+            <span>Avatar</span>
+            <Input
+              type="url"
+              className="mt-1"
+              value={editingCustomer?.avatar || ""}
+              onChange={(e) => setEditingCustomer({ ...editingCustomer!, avatar: e.target.value })}
+            />
+          </Label>
+          <Label>
+            <span>Note</span>
+            <Input
+              className="mt-1"
+              value={editingCustomer?.note || ""}
+              onChange={(e) => setEditingCustomer({ ...editingCustomer!, note: e.target.value })}
+            />
+          </Label>
+        </ModalBody>
+        <ModalFooter>
+          <Button layout="outline" onClick={closeEditModal}>
+            Cancel
+          </Button>
+          <Button onClick={handleUpdateCustomer}>Save</Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Delete Modal */}
+      <Modal isOpen={isDeleteModalOpen} onClose={closeDeleteModal}>
+        <ModalHeader>Delete Customer</ModalHeader>
+        <ModalBody>
+          Are you sure you want to delete the customer: <b>{customerToDelete?.name}</b>?
+        </ModalBody>
+        <ModalFooter>
+          <Button layout="outline" onClick={closeDeleteModal}>
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteCustomer}>Delete</Button>
+        </ModalFooter>
+      </Modal>
+    </Layout>
+  );
+}
+
+export default CustomerTable;
+

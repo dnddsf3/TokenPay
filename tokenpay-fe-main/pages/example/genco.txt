@@ -1,0 +1,545 @@
+import React, { useState, useEffect } from "react";
+
+import PageTitle from "example/components/Typography/PageTitle";
+import {
+  Table,
+  TableHeader,
+  TableCell,
+  TableBody,
+  TableRow,
+  TableFooter,
+  TableContainer,
+  Badge,
+  Button,
+  Pagination,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Input,
+  Label,
+} from "@roketid/windmill-react-ui";
+import { EditIcon, TrashIcon } from "icons";
+
+import Layout from "example/containers/Layout";
+import { useProviderStore } from "hooks/genco/genco-store";
+import { ProviderCreateDTO, ProviderCreateSchema, ProviderRetrieveDTO, ProviderUpdateDTO, ProviderUpdateSchema } from "hooks/genco/genco-schema";
+import { z } from "zod";
+
+
+
+
+function ProviderTable() {
+  const [page, setPage] = useState(1);
+  const { providers, fetchProviders, updateProvider, addProvider: createProvider, deleteProvider } = useProviderStore();
+
+  const resultsPerPage = 10;
+  const totalResults = providers.length;
+  const [paginatedProviders, setPaginatedProviders] = useState<ProviderRetrieveDTO[]>([]);
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingProvider, setEditingProvider] = useState<ProviderUpdateDTO | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [providerToDelete, setProviderToDelete] = useState<ProviderRetrieveDTO | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredProviders, setFilteredProviders] = useState<ProviderRetrieveDTO[]>([]);
+
+  // Fetch providers on mount
+  useEffect(() => {
+    fetchProviders();
+  }, [fetchProviders]);
+
+  // Update paginated providers whenever providers, page, or searchQuery changes
+  useEffect(() => {
+    const filtered = providers.filter((provider) =>
+      provider.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredProviders(filtered);
+
+    const startIndex = (page - 1) * resultsPerPage;
+    const endIndex = page * resultsPerPage;
+    setPaginatedProviders(filtered.slice(startIndex, endIndex));
+  }, [providers, page, searchQuery]);
+
+  // Handle search query input
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setPage(1); // Reset to the first page on search
+  };
+
+
+  const [newProvider, setNewProvider] = useState<ProviderCreateDTO>({
+    name: "",
+    address: "",
+    contactNumber: "",
+    email: "",
+    isActive: true,
+  });
+
+  const [errors, setErrors] = useState({});
+
+  const onPageChange = (p: number) => {
+    setPage(p);
+  };
+
+  useEffect(() => {
+    fetchProviders();
+  }, [fetchProviders]);
+
+  useEffect(() => {
+    const startIndex = (page - 1) * resultsPerPage;
+    const endIndex = page * resultsPerPage;
+    setPaginatedProviders(providers.slice(startIndex, endIndex));
+  }, [providers, page]);
+
+  const openEditModal = (provider: ProviderRetrieveDTO) => {
+    setEditingProvider({
+      id: provider.id,
+      name: provider.name,
+      address: provider.address,
+      contactNumber: provider.contactNumber,
+      email: provider.email,
+      isActive: provider.isActive,
+    });
+    setErrors({});
+    setIsEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingProvider(null);
+  };
+
+  const openCreateModal = () => {
+    setNewProvider({
+      name: "",
+      address: "",
+      contactNumber: "",
+      email: "",
+      isActive: true,
+    });
+    setErrors({}); // Clear any existing validation errors
+    setIsCreateModalOpen(true); // Open the modal
+  };
+
+  const closeCreateModal = () => {
+    setIsCreateModalOpen(false);
+  };
+
+  const openDeleteModal = (provider: ProviderRetrieveDTO) => {
+    setProviderToDelete(provider);
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setProviderToDelete(null);
+    setIsDeleteModalOpen(false);
+  };
+
+
+  const handleUpdateProvider = async () => {
+    if (!editingProvider) return;
+
+    try {
+      // Validate the provider data using Zod schema
+      const validatedProvider = validateProvider(editingProvider);
+
+      // Call the update function
+      await updateProviderData(validatedProvider);
+
+      // Refresh data and close the modal
+      await finalizeUpdate();
+    } catch (error) {
+      handleUpdateError(error);
+    }
+  };
+
+  // Helper function to validate provider data using Zod schema
+  const validateProvider = (provider: ProviderUpdateDTO) => {
+    try {
+      return ProviderUpdateSchema.parse(provider);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errorMessages = mapZodErrors(error.errors);
+        setErrors(errorMessages);
+        throw new Error("Validation failed.");
+      }
+      throw error;
+    }
+  };
+
+  // Helper function to update provider data
+  const updateProviderData = async (validatedProvider: ProviderUpdateDTO) => {
+    try {
+      console.log("Validated Provider:", validatedProvider);
+      await updateProvider(validatedProvider.id || 1, validatedProvider);
+    } catch (error) {
+      throw new Error("Failed to update provider data.");
+    }
+  };
+
+  // Helper function to finalize update process
+  const finalizeUpdate = async () => {
+    closeEditModal();
+    await fetchProviders();
+  };
+
+  // Helper function to handle errors during the update process
+  const handleUpdateError = (error: unknown) => {
+    if (error instanceof Error && error.message === "Validation failed.") {
+      alert("Please fix validation errors before submitting the form.");
+    } else {
+      console.error("Unexpected Error:", error);
+      alert("An unexpected error occurred. Please try again later.");
+    }
+  };
+
+  // Utility function to map Zod validation errors
+  const mapZodErrors = (errors: z.ZodIssue[]) => {
+    return errors.reduce((acc: Record<string, string>, curr) => {
+      acc[curr.path[0] as string] = curr.message;
+      return acc;
+    }, {});
+  };
+
+
+  const handleCreateProvider = async () => {
+    try {
+      // Validate the new provider data
+      const validatedProvider = validateNewProvider(newProvider);
+
+      // Call the create function with validated data
+      await createProviderData(validatedProvider);
+
+      // Finalize creation process
+      await finalizeCreation();
+    } catch (error) {
+      handleCreateError(error);
+    }
+  };
+
+  // Helper function to validate provider data
+  const validateNewProvider = (provider: ProviderCreateDTO) => {
+    try {
+      return ProviderCreateSchema.parse(provider);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errorMessages = mapZodErrors(error.errors);
+        setErrors(errorMessages);
+        throw new Error("Validation failed.");
+      }
+      throw error;
+    }
+  };
+
+  // Helper function to create provider data
+  const createProviderData = async (validatedProvider: ProviderCreateDTO) => {
+    try {
+      await createProvider(validatedProvider);
+    } catch (error) {
+      throw new Error("Failed to create provider data.");
+    }
+  };
+
+  // Helper function to finalize creation process
+  const finalizeCreation = async () => {
+    closeCreateModal();
+    await fetchProviders();
+  };
+
+  // Helper function to handle errors during the creation process
+  const handleCreateError = (error: unknown) => {
+    if (error instanceof Error && error.message === "Validation failed.") {
+      alert("Please fix validation errors before submitting the form.");
+    } else {
+      console.error("Unexpected Error:", error);
+      alert("An unexpected error occurred. Please try again later.");
+    }
+  };
+
+  const handleDeleteProvider = async () => {
+    if (!providerToDelete) return;
+    try {
+      await deleteProvider(providerToDelete.id);
+      closeDeleteModal();
+      fetchProviders();
+    } catch (error) {
+      console.error("Failed to delete provider:", error);
+    }
+  };
+
+  return (
+    <Layout>
+      <div className="flex items-center justify-between">
+        <PageTitle>Provider List</PageTitle>
+        <div className="flex items-center space-x-2">
+          <Input
+            className="mt-1 w-[300px]"
+            placeholder="Search by Name"
+            value={searchQuery}
+            onChange={handleSearch}
+          />
+          <Button onClick={openCreateModal} className="bg-red-500 hover:bg-red-600">
+            <span>+ Create Provider</span>
+          </Button>
+        </div>
+      </div>
+      <TableContainer className="mb-8">
+        <Table>
+          <TableHeader>
+            <tr>
+              <TableCell>ID</TableCell>
+              <TableCell>Name</TableCell>
+              <TableCell>Address</TableCell>
+              <TableCell>Contact</TableCell>
+              <TableCell>Email</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell className="text-right">Action</TableCell>
+            </tr>
+          </TableHeader>
+          <TableBody>
+            {paginatedProviders.sort((a: any, b: any) => a.id - b.id).map((provider: any) => (
+              <TableRow key={provider.id}>
+                <TableCell>{provider.id}</TableCell>
+                <TableCell>{provider.name}</TableCell>
+                <TableCell>{provider.address}</TableCell>
+                <TableCell>{provider.contactNumber}</TableCell>
+                <TableCell>{provider.email}</TableCell>
+                <TableCell>
+                  <Badge type={provider.isActive ? "success" : "danger"}>
+                    {provider.isActive ? "Active" : "Inactive"}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center space-x-4 justify-end">
+                    <Button layout="link" size="small" aria-label="Edit" onClick={() => openEditModal(provider)}>
+                      <EditIcon className="w-5 h-5" aria-hidden="true" />
+                    </Button>
+                    <Button layout="link" size="small" aria-label="Delete" onClick={() => openDeleteModal(provider)}>
+                      <TrashIcon className="w-5 h-5" aria-hidden="true" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <TableFooter>
+          <Pagination totalResults={totalResults} resultsPerPage={resultsPerPage} onChange={onPageChange} label="Table navigation" />
+        </TableFooter>
+      </TableContainer>
+
+      {/* Create Modal */}
+      <Modal isOpen={isCreateModalOpen} onClose={closeCreateModal}>
+        <ModalHeader>Create Provider</ModalHeader>
+        <ModalBody className="flex flex-col space-y-4">
+          {/* Name Field */}
+          <Label>
+            <span>Name</span>
+            <Input
+              className={`mt-1 ${errors.name ? "border-red-500" : ""}`}
+              value={newProvider.name}
+              onChange={(e) =>
+                setNewProvider({ ...newProvider, name: e.target.value })
+              }
+            />
+            {errors.name && (
+              <span className="text-red-500 text-sm">{errors.name}</span>
+            )}
+          </Label>
+
+          {/* Address Field */}
+          <Label>
+            <span>Address</span>
+            <Input
+              className={`mt-1 ${errors.address ? "border-red-500" : ""}`}
+              value={newProvider.address}
+              onChange={(e) =>
+                setNewProvider({ ...newProvider, address: e.target.value })
+              }
+            />
+            {errors.address && (
+              <span className="text-red-500 text-sm">{errors.address}</span>
+            )}
+          </Label>
+
+          {/* Contact Number Field */}
+          <Label>
+            <span>Contact Number</span>
+            <Input
+              className={`mt-1 ${errors.contactNumber ? "border-red-500" : ""}`}
+              value={newProvider.contactNumber}
+              onChange={(e) =>
+                setNewProvider({ ...newProvider, contactNumber: e.target.value })
+              }
+            />
+            {errors.contactNumber && (
+              <span className="text-red-500 text-sm">{errors.contactNumber}</span>
+            )}
+          </Label>
+
+          {/* Email Field */}
+          <Label>
+            <span>Email</span>
+            <Input
+              className={`mt-1 ${errors.email ? "border-red-500" : ""}`}
+              value={newProvider.email}
+              onChange={(e) =>
+                setNewProvider({ ...newProvider, email: e.target.value })
+              }
+            />
+            {errors.email && (
+              <span className="text-red-500 text-sm">{errors.email}</span>
+            )}
+          </Label>
+
+          {/* Status Field */}
+          <Label className="flex space-x-2">
+            <Input
+              type="checkbox"
+              className="mt-1"
+              checked={newProvider.isActive}
+              onChange={(e) =>
+                setNewProvider({ ...newProvider, isActive: e.target.checked })
+              }
+            />
+            <span>Status</span>
+            {errors.isActive && (
+              <span className="text-red-500 text-sm">{errors.isActive}</span>
+            )}
+          </Label>
+        </ModalBody>
+        <ModalFooter>
+          <Button layout="outline" onClick={closeCreateModal}>
+            Cancel
+          </Button>
+          <Button onClick={handleCreateProvider}>Save</Button>
+        </ModalFooter>
+      </Modal>
+
+
+
+      {/* Edit Modal */}
+      <Modal isOpen={isEditModalOpen} onClose={closeEditModal}>
+        <ModalHeader>Edit Provider</ModalHeader>
+        <ModalBody className="flex flex-col space-y-4">
+          <Label>
+            <span>Name</span>
+            <Input
+              className={`mt-1 ${errors.name ? "border-red-500" : ""}`}
+              value={editingProvider?.name || ""}
+              onChange={(e) => {
+                setEditingProvider({ ...editingProvider!, name: e.target.value });
+                if (errors.name) {
+                  setErrors((prevErrors) => ({ ...prevErrors, name: "" })); // Clear error
+                }
+              }}
+            />
+            {errors.name && (
+              <span className="text-red-500 text-sm">{errors.name}</span>
+            )}
+          </Label>
+          <Label>
+            <span>Address</span>
+            <Input
+              className={`mt-1 ${errors.address ? "border-red-500" : ""}`}
+              value={editingProvider?.address || ""}
+              onChange={(e) => {
+                setEditingProvider({ ...editingProvider!, address: e.target.value });
+                if (errors.address) {
+                  setErrors((prevErrors) => ({ ...prevErrors, address: "" })); // Clear error
+                }
+              }}
+            />
+            {errors.address && (
+              <span className="text-red-500 text-sm">{errors.address}</span>
+            )}
+          </Label>
+          <Label>
+            <span>Contact Number</span>
+            <Input
+              className={`mt-1 ${errors.contactNumber ? "border-red-500" : ""}`}
+              value={editingProvider?.contactNumber || ""}
+              onChange={(e) => {
+                setEditingProvider({
+                  ...editingProvider!,
+                  contactNumber: e.target.value,
+                });
+                if (errors.contactNumber) {
+                  setErrors((prevErrors) => ({
+                    ...prevErrors,
+                    contactNumber: "",
+                  })); // Clear error
+                }
+              }}
+            />
+            {errors.contactNumber && (
+              <span className="text-red-500 text-sm">{errors.contactNumber}</span>
+            )}
+          </Label>
+          <Label>
+            <span>Email</span>
+            <Input
+              className={`mt-1 ${errors.email ? "border-red-500" : ""}`}
+              value={editingProvider?.email || ""}
+              onChange={(e) => {
+                setEditingProvider({ ...editingProvider!, email: e.target.value });
+                if (errors.email) {
+                  setErrors((prevErrors) => ({ ...prevErrors, email: "" })); // Clear error
+                }
+              }}
+            />
+            {errors.email && (
+              <span className="text-red-500 text-sm">{errors.email}</span>
+            )}
+          </Label>
+          <Label className="flex items-center space-x-2">
+            <Input
+              type="checkbox"
+              className={`mt-1 ${errors.isActive ? "border-red-500" : ""}`}
+              checked={editingProvider?.isActive || false}
+              onChange={(e) => {
+                setEditingProvider({
+                  ...editingProvider!,
+                  isActive: e.target.checked,
+                });
+                if (errors.isActive) {
+                  setErrors((prevErrors) => ({ ...prevErrors, isActive: "" })); // Clear error
+                }
+              }}
+            />
+            <span>Status</span>
+            {errors.isActive && (
+              <span className="text-red-500 text-sm">{errors.isActive}</span>
+            )}
+          </Label>
+        </ModalBody>
+        <ModalFooter>
+          <Button layout="outline" onClick={closeEditModal}>
+            Cancel
+          </Button>
+          <Button onClick={handleUpdateProvider}>Save</Button>
+        </ModalFooter>
+      </Modal>
+
+
+      {/* Delete Modal */}
+      <Modal isOpen={isDeleteModalOpen} onClose={closeDeleteModal}>
+        <ModalHeader>Delete Provider</ModalHeader>
+        <ModalBody>
+          Are you sure you want to delete the provider: <b>{providerToDelete?.name}</b>?
+        </ModalBody>
+        <ModalFooter>
+          <Button layout="outline" onClick={closeDeleteModal}>
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteProvider}>Delete</Button>
+        </ModalFooter>
+      </Modal>
+    </Layout>
+  );
+}
+
+export default ProviderTable;
+

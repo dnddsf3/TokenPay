@@ -1,0 +1,386 @@
+import React, { useState, useEffect } from "react";
+
+import PageTitle from "example/components/Typography/PageTitle";
+import {
+  Table,
+  TableHeader,
+  TableCell,
+  TableBody,
+  TableRow,
+  TableFooter,
+  TableContainer,
+  Badge,
+  Button,
+  Pagination,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Input,
+  Label,
+  Select,
+} from "@roketid/windmill-react-ui";
+import { EditIcon, TrashIcon } from "icons";
+
+import Layout from "example/containers/Layout";
+import { useTokenStore } from "hooks/token/token-store";
+import { TokenCreateDTO, TokenRetrieveDTO, TokenUpdateDTO } from "hooks/token/token-schema";
+
+function TokenTable() {
+  const [page, setPage] = useState(1);
+  const { tokens, fetchTokens, addToken: createToken, updateToken, deleteToken } = useTokenStore();
+
+  const resultsPerPage = 10;
+  const totalResults = tokens.length;
+  const [paginatedTokens, setPaginatedTokens] = useState<TokenRetrieveDTO[]>([]);
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingToken, setEditingToken] = useState<TokenUpdateDTO | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [tokenToDelete, setTokenToDelete] = useState<TokenRetrieveDTO | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredTokens, setFilteredTokens] = useState<TokenRetrieveDTO[]>([]);
+
+  const [newToken, setNewToken] = useState<TokenCreateDTO>({
+    amount: 0,
+    unitsPurchased: 0,
+    gencoId: 0,
+    expiresAt: new Date().toISOString().slice(0, -1),
+    tokenStatus: "ACTIVE",
+    tokenType: "PRIVATE",
+  });
+
+  const onPageChange = (p: number) => {
+    setPage(p);
+  };
+
+  useEffect(() => {
+    fetchTokens();
+  }, [fetchTokens]);
+
+  // Fetch tokens on mount
+  useEffect(() => {
+    fetchTokens();
+  }, [fetchTokens]);
+
+  // Update filtered and paginated tokens
+  useEffect(() => {
+    const filtered = tokens.filter((token) =>
+      token.tokenCode.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredTokens(filtered);
+
+    const startIndex = (page - 1) * resultsPerPage;
+    const endIndex = page * resultsPerPage;
+    setPaginatedTokens(filtered.slice(startIndex, endIndex));
+  }, [tokens, page, searchQuery]);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setPage(1); // Reset to the first page on search
+  };
+
+  useEffect(() => {
+    const startIndex = (page - 1) * resultsPerPage;
+    const endIndex = page * resultsPerPage;
+    setPaginatedTokens(tokens.slice(startIndex, endIndex));
+  }, [tokens, page]);
+
+  const openEditModal = (token: TokenRetrieveDTO) => {
+    setEditingToken({
+      amount: token.amount,
+      unitsPurchased: token.unitsPurchased,
+      gencoId: token.genco.id,
+      expiresAt: token.expiresAt,
+      tokenStatus: token.tokenStatus,
+      tokenType: token.tokenType,
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingToken(null);
+  };
+
+  const openCreateModal = () => {
+    setIsCreateModalOpen(true);
+  };
+
+  const closeCreateModal = () => {
+    setIsCreateModalOpen(false);
+  };
+
+  const openDeleteModal = (token: TokenRetrieveDTO) => {
+    setTokenToDelete(token);
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setTokenToDelete(null);
+    setIsDeleteModalOpen(false);
+  };
+
+  const handleUpdateToken = async () => {
+    if (!editingToken || !tokenToDelete) return;
+    try {
+      await updateToken(tokenToDelete.id, editingToken);
+      closeEditModal();
+      fetchTokens();
+    } catch (error) {
+      console.error("Failed to update token:", error);
+    }
+  };
+
+  const handleCreateToken = async () => {
+    try {
+      await createToken(newToken);
+      closeCreateModal();
+      fetchTokens();
+    } catch (error) {
+      console.error("Failed to create token:", error);
+    }
+  };
+
+  const handleDeleteToken = async () => {
+    if (!tokenToDelete) return;
+    try {
+      await deleteToken(tokenToDelete.id);
+      closeDeleteModal();
+      fetchTokens();
+    } catch (error) {
+      console.error("Failed to delete token:", error);
+    }
+  };
+
+  return (
+    <Layout>
+      <div className="flex items-center justify-between">
+        <PageTitle>Token List</PageTitle>
+        <div className="flex items-center space-x-2">
+          <Input
+            className="mt-1 w-[300px]"
+            placeholder="Search by Token Code"
+            value={searchQuery}
+            onChange={handleSearch}
+          />
+          <Button onClick={openCreateModal} className="bg-red-500 hover:bg-red-600">
+            <span>+ Create Token</span>
+          </Button>
+        </div>
+      </div>
+
+      <TableContainer className="mb-8">
+        <Table>
+          <TableHeader>
+            <tr>
+              <TableCell>ID</TableCell>
+              <TableCell>Token Code</TableCell>
+              <TableCell>Amount</TableCell>
+              <TableCell>Units Purchased</TableCell>
+              <TableCell>Genco</TableCell>
+              <TableCell>Expires At</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Type</TableCell>
+              <TableCell className="text-right">Action</TableCell>
+            </tr>
+          </TableHeader>
+          <TableBody>
+            {paginatedTokens.sort((a: any, b: any) => a.id - b.id).map((token: TokenRetrieveDTO) => (
+              <TableRow key={token.id}>
+                <TableCell>{token.id}</TableCell>
+                <TableCell>{token.tokenCode}</TableCell>
+                <TableCell>{token.amount}</TableCell>
+                <TableCell>{token.unitsPurchased}</TableCell>
+                <TableCell>{token?.genco?.name}</TableCell>
+                <TableCell>{new Date(token.expiresAt).toLocaleString()}</TableCell>
+                <TableCell>
+                  <Badge>{token.tokenStatus}</Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge>{token.tokenType}</Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center space-x-4 justify-end">
+                    <Button layout="link" size="small" aria-label="Edit" onClick={() => openEditModal(token)}>
+                      <EditIcon className="w-5 h-5" aria-hidden="true" />
+                    </Button>
+                    <Button layout="link" size="small" aria-label="Delete" onClick={() => openDeleteModal(token)}>
+                      <TrashIcon className="w-5 h-5" aria-hidden="true" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <TableFooter>
+          <Pagination totalResults={totalResults} resultsPerPage={resultsPerPage} onChange={onPageChange} label="Table navigation" />
+        </TableFooter>
+      </TableContainer>
+
+      {/* Create Modal */}
+      <Modal isOpen={isCreateModalOpen} onClose={closeCreateModal}>
+        <ModalHeader>Create Token</ModalHeader>
+        <ModalBody className="flex flex-col space-y-2">
+          <Label>
+            <span>Amount</span>
+            <Input
+              className="mt-1"
+              type="number"
+              value={newToken.amount}
+              onChange={(e) => setNewToken({ ...newToken, amount: parseFloat(e.target.value) })}
+            />
+          </Label>
+          <Label>
+            <span>Units Purchased</span>
+            <Input
+              className="mt-1"
+              type="number"
+              value={newToken.unitsPurchased}
+              onChange={(e) => setNewToken({ ...newToken, unitsPurchased: parseFloat(e.target.value) })}
+            />
+          </Label>
+          <Label>
+            <span>Genco ID</span>
+            <Input
+              className="mt-1"
+              type="number"
+              value={newToken.gencoId}
+              onChange={(e) => setNewToken({ ...newToken, gencoId: parseInt(e.target.value) })}
+            />
+          </Label>
+          <Label>
+            <span>Expires At</span>
+            <Input
+              type="datetime-local"
+              className="mt-1"
+              value={newToken.expiresAt}
+              onChange={(e) => setNewToken({ ...newToken, expiresAt: e.target.value })}
+            />
+          </Label>
+          <Label>
+            <span>Status</span>
+            <Select
+              className="mt-1"
+              value={newToken.tokenStatus}
+              onChange={(e) => setNewToken({ ...newToken, tokenStatus: e.target.value })}
+            >
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+              <option value="EXPIRED">Expired</option>
+            </Select>
+          </Label>
+          <Label>
+            <span>Type</span>
+            <Select
+              className="mt-1"
+              value={newToken.tokenType}
+              onChange={(e) => setNewToken({ ...newToken, tokenType: e.target.value })}
+            >
+              <option value="PRIVATE">Private</option>
+              <option value="PUBLIC">Public</option>
+              <option value="RESTRICTED">Restricted</option>
+            </Select>
+          </Label>
+        </ModalBody>
+        <ModalFooter>
+          <Button layout="outline" onClick={closeCreateModal}>
+            Cancel
+          </Button>
+          <Button onClick={handleCreateToken}>Save</Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal isOpen={isEditModalOpen} onClose={closeEditModal}>
+        <ModalHeader>Edit Token</ModalHeader>
+        <ModalBody className="flex flex-col space-y-2">
+          <Label>
+            <span>Amount</span>
+            <Input
+              className="mt-1"
+              type="number"
+              value={editingToken?.amount || ""}
+              onChange={(e) => setEditingToken({ ...editingToken!, amount: parseFloat(e.target.value) })}
+            />
+          </Label>
+          <Label>
+            <span>Units Purchased</span>
+            <Input
+              className="mt-1"
+              type="number"
+              value={editingToken?.unitsPurchased || ""}
+              onChange={(e) => setEditingToken({ ...editingToken!, unitsPurchased: parseFloat(e.target.value) })}
+            />
+          </Label>
+          <Label>
+            <span>Genco ID</span>
+            <Input
+              className="mt-1"
+              type="number"
+              value={editingToken?.gencoId || ""}
+              onChange={(e) => setEditingToken({ ...editingToken!, gencoId: parseInt(e.target.value) })}
+            />
+          </Label>
+          <Label>
+            <span>Expires At</span>
+            <Input
+              type="datetime-local"
+              className="mt-1"
+              value={editingToken?.expiresAt || ""}
+              onChange={(e) => setEditingToken({ ...editingToken!, expiresAt: e.target.value })}
+            />
+          </Label>
+          <Label>
+            <span>Status</span>
+            <Select
+              className="mt-1"
+              value={editingToken?.tokenStatus || ""}
+              onChange={(e) => setEditingToken({ ...editingToken!, tokenStatus: e.target.value })}
+            >
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+              <option value="EXPIRED">Expired</option>
+            </Select>
+          </Label>
+          <Label>
+            <span>Type</span>
+            <Select
+              className="mt-1"
+              value={editingToken?.tokenType || ""}
+              onChange={(e) => setEditingToken({ ...editingToken!, tokenType: e.target.value })}
+            >
+              <option value="PRIVATE">Private</option>
+              <option value="PUBLIC">Public</option>
+              <option value="RESTRICTED">Restricted</option>
+            </Select>
+          </Label>
+        </ModalBody>
+        <ModalFooter>
+          <Button layout="outline" onClick={closeEditModal}>
+            Cancel
+          </Button>
+          <Button onClick={handleUpdateToken}>Save</Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Delete Modal */}
+      <Modal isOpen={isDeleteModalOpen} onClose={closeDeleteModal}>
+        <ModalHeader>Delete Token</ModalHeader>
+        <ModalBody>
+          Are you sure you want to delete the token: <b>{tokenToDelete?.tokenCode}</b>?
+        </ModalBody>
+        <ModalFooter>
+          <Button layout="outline" onClick={closeDeleteModal}>
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteToken}>Delete</Button>
+        </ModalFooter>
+      </Modal>
+    </Layout>
+  );
+}
+
+export default TokenTable;

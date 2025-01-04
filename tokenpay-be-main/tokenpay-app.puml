@@ -1,0 +1,891 @@
+@startuml
+class id.tu.service.domain.dto.role.RoleResponseDTO {
+- Long id
+- String name
+- String description
+- LocalDateTime createdAt
+- LocalDateTime updatedAt
+}
+
+interface id.tu.service.domain.mapper.BusinessEventMapper {
+~ BusinessEvent toEntity(BusinessEventCreateDTO)
+~ BusinessEventResponseDTO toResponseDTO(BusinessEvent)
+~ void updateEntity(BusinessEvent,BusinessEventCreateDTO)
+}
+
+class id.tu.service.domain.model.genco.Genco {
+- Long id
+- String name
+- String address
+- String contactNumber
+- String email
+- Boolean isActive
+- LocalDateTime createdAt
+- LocalDateTime updatedAt
+# void onCreate()
+# void onUpdate()
+}
+
+
+class id.tu.service.domain.dto.customer.CustomerRequestUpdateDTO {
+- Long id
+- String name
+- String email
+- String phoneNumber
+- String address
+- String meterNumber
+- TariffType tariffType
+- Long gencoId
+- CustomerType customerType
+- CustomerStatus customerStatus
+- String avatar
+- String note
+- Long userId
+}
+
+interface id.tu.service.domain.service.CustomerService {
+~ CustomerResponseDTO createCustomer(CustomerRequestCreateDTO)
+~ CustomerResponseDTO updateCustomer(Long,CustomerRequestUpdateDTO)
+~ void deleteCustomer(Long)
+~ CustomerResponseDTO getCustomerById(Long)
+~ List<CustomerResponseSimpleDTO> getAllCustomers()
+}
+
+class id.tu.service.domain.dto.token.TokenResponseSimpleDTO {
+- Long id
+- String tokenCode
+- Double amount
+}
+
+class id.tu.service.domain.dto.role.RoleRequestUpdateDTO {
+- Long id
+- String name
+- String description
+- Long updatedById
+}
+
+class id.tu.service.controller.BusinessEventController {
+- BusinessEventService eventService
++ ResponseEntity<BusinessEventResponseDTO> createEvent(BusinessEventCreateDTO)
++ ResponseEntity<List<BusinessEventResponseDTO>> getAllEvents()
++ ResponseEntity<BusinessEventResponseDTO> getEventById(Long)
+}
+
+
+class id.tu.service.domain.dto.payment.PaymentRequestCreateDTO {
+- Long tokenId
+- Long customerId
+- Double energyUsage
+- Double amountPaid
+- Double ppn
+- Double ppj
+- Double materai
+- Double bankFee
+- Double serviceFee
+- Double total
+- PaymentMethod paymentMethod
+- String qris
+- PaymentStatus paymentStatus
+- PaymentPromo paymentPromo
+- String note
+}
+
+interface id.tu.service.domain.mapper.PaymentMapper {
+~ Payment toEntity(PaymentRequestCreateDTO)
+~ void updateEntity(Payment,PaymentRequestUpdateDTO)
+~ PaymentResponseDTO toResponseDTO(Payment)
+}
+
+class id.tu.service.domain.init.GencoDataInitializer {
+- GencoRepository gencoRepository
++ void run(String)
+}
+
+
+enum id.tu.service.domain.model.customer.TariffType {
++  PREPAID
++  POSTPAID
+}
+
+class id.tu.service.controller.GencoController {
+- GencoService gencoService
++ ResponseEntity<GencoResponseDTO> createGenco(GencoRequestCreateDTO)
++ ResponseEntity<GencoResponseDTO> updateGenco(Long,GencoRequestUpdateDTO)
++ ResponseEntity<Void> deleteGenco(Long)
++ ResponseEntity<GencoResponseDTO> getGencoById(Long)
++ ResponseEntity<List<GencoResponseDTO>> getAllGencos()
+}
+
+
+class id.tu.service.domain.dto.user.UserResponseSimpleDTO {
+- Long id
+- String username
+- String email
+}
+
+class id.tu.service.domain.service.impl.UserServiceImpl {
+- UserRepository userRepository
+- UserMapper userMapper
+- PasswordEncoder passwordEncoder
++ UserResponseDTO createUser(UserRequestCreateDTO)
++ UserResponseDTO updateUser(Long,UserRequestUpdateDTO)
++ UserResponseDTO getUserById(Long)
++ UserResponseDTO getUserByUsername(String)
++ List<UserResponseDTO> getAllUsers()
++ void deleteUserById(Long)
+}
+
+
+class id.tu.service.domain.model.token.Token {
+- Long id
+- String tokenCode
+- Double amount
+- Double unitsPurchased
+- Genco genco
+- LocalDateTime createdAt
+- LocalDateTime expiresAt
+- TokenStatus tokenStatus
+- TokenType tokenType
+# void onCreate()
+}
+
+
+interface id.tu.service.domain.repository.BusinessEventRepository {
+}
+class id.tu.service.domain.dto.token.TokenRequestCreateDTO {
+- String tokenCode
+- Double amount
+- Double unitsPurchased
+- Long gencoId
+- LocalDateTime expiresAt
+- TokenStatus tokenStatus
+- TokenType tokenType
+}
+
+enum id.tu.service.domain.model.token.TokenType {
++  PUBLIC
++  PRIVATE
+}
+
+class id.tu.service.controller.PaymentController {
+- PaymentService paymentService
++ ResponseEntity<PaymentResponseDTO> createPayment(PaymentRequestCreateDTO)
++ ResponseEntity<PaymentResponseDTO> updatePayment(Long,PaymentRequestUpdateDTO)
++ ResponseEntity<Void> deletePayment(Long)
++ ResponseEntity<PaymentResponseDTO> getPaymentById(Long)
++ ResponseEntity<List<PaymentResponseDTO>> getAllPayments()
+}
+
+
+interface id.tu.service.domain.repository.RoleRepository {
+~ Optional<Role> findByName(String)
+}
+
+class id.tu.service.domain.service.impl.CustomerServiceImpl {
+- CustomerRepository customerRepository
+- CustomerMapper customerMapper
++ CustomerResponseDTO createCustomer(CustomerRequestCreateDTO)
++ CustomerResponseDTO updateCustomer(Long,CustomerRequestUpdateDTO)
++ void deleteCustomer(Long)
++ CustomerResponseDTO getCustomerById(Long)
++ List<CustomerResponseSimpleDTO> getAllCustomers()
+}
+
+
+class id.tu.service.controller.LogInOutController {
++ String publicLoginInfo()
++ String publicLogoutInfo()
+}
+
+class id.tu.service.domain.dto.payment.PaymentResponseSimpleDTO {
+- Long id
+- Double amountPaid
+- PaymentMethod paymentMethod
+- PaymentStatus paymentStatus
+- LocalDateTime timestamp
+}
+
+class id.tu.service.config.CustomUserDetails {
+- Long id
+- String username
+- String password
+- String email
+- boolean isActive
+- Collection<? extends GrantedAuthority> authorities
++ Collection<? extends GrantedAuthority> getAuthorities()
++ String getPassword()
++ String getUsername()
++ boolean isAccountNonExpired()
++ boolean isAccountNonLocked()
++ boolean isCredentialsNonExpired()
++ boolean isEnabled()
++ Long getId()
++ String getEmail()
+}
+
+
+interface id.tu.service.domain.mapper.TokenMapper {
+~ Token toEntity(TokenRequestCreateDTO)
+~ void updateEntity(Token,TokenRequestUpdateDTO)
+~ TokenResponseDTO toResponseDTO(Token)
+~ TokenResponseSimpleDTO toSimpleResponseDTO(Token)
+}
+
+class id.tu.service.domain.init.UserDataInitializer {
+- UserRepository userRepository
+- RoleRepository roleRepository
+- PasswordEncoder passwordEncoder
++ void run(String)
+- void initializeUsers()
+- Role getRoleFromRepository(String)
+}
+
+
+class id.tu.service.domain.init.RoleDataInitializer {
+- RoleRepository roleRepository
++ void run(String)
+- void initializeRoles()
+- Role createRole(String,String)
+}
+
+
+enum id.tu.service.domain.model.customer.CustomerType {
++  RESIDENTIAL
++  COMMERCIAL
++  INDUSTRIAL
+}
+
+class id.tu.service.domain.dto.token.TokenRequestUpdateDTO {
+- Long id
+- Double amount
+- Double unitsPurchased
+- Long gencoId
+- LocalDateTime expiresAt
+- TokenStatus tokenStatus
+- TokenType tokenType
+}
+
+class id.tu.service.controller.PublicController {
++ String publicInfo()
+}
+
+class id.tu.service.domain.init.TokenDataInitializer {
+- TokenRepository tokenRepository
+- GencoRepository gencoRepository
++ void run(String)
+}
+
+
+class id.tu.service.domain.dto.customer.CustomerResponseSimpleDTO {
+- Long id
+- String name
+- String email
+- String phoneNumber
+- String meterNumber
+- TariffType tariffType
+- CustomerType customerType
+- CustomerStatus customerStatus
+}
+
+class id.tu.service.domain.service.impl.GencoServiceImpl {
+- GencoRepository gencoRepository
+- GencoMapper gencoMapper
+- TokenRepository tokenRepository
++ GencoResponseDTO createGenco(GencoRequestCreateDTO)
++ GencoResponseDTO updateGenco(Long,GencoRequestUpdateDTO)
++ void deleteGenco(Long)
++ GencoResponseDTO getGencoById(Long)
++ List<GencoResponseDTO> getAllGencos()
+}
+
+
+class id.tu.service.domain.dto.payment.PaymentRequestUpdateDTO {
+- Long id
+- Double energyUsage
+- Double amountPaid
+- Double ppn
+- Double ppj
+- Double materai
+- Double bankFee
+- Double serviceFee
+- Double total
+- PaymentMethod paymentMethod
+- String qris
+- PaymentStatus paymentStatus
+- PaymentPromo paymentPromo
+- String note
+}
+
+interface id.tu.service.domain.mapper.RoleMapper {
+~ {static} RoleMapper INSTANCE
+~ RoleResponseDTO toResponseDTO(Role)
+~ Role toEntity(RoleRequestCreateDTO)
+~ Role toEntity(RoleRequestUpdateDTO)
+~ void updateEntityFromDTO(RoleRequestUpdateDTO,Role)
+}
+
+
+class id.tu.service.config.SecurityConfig {
+- CustomUserDetailsService userDetailsService
++ PasswordEncoder passwordEncoder()
++ DaoAuthenticationProvider authenticationProvider()
++ AuthenticationManager authenticationManager(AuthenticationConfiguration)
++ SecurityFilterChain securityFilterChain(HttpSecurity)
+}
+
+
+enum id.tu.service.domain.model.notif.BusinessEventType {
++  PAYMENT
+}
+
+interface id.tu.service.domain.repository.GencoRepository {
+}
+enum id.tu.service.domain.model.genco.GencoStatus {
+}
+class id.tu.service.domain.dto.genco.GencoResponseDTO {
+- Long id
+- String name
+- String address
+- String contactNumber
+- String email
+- Boolean isActive
+- LocalDateTime createdAt
+- LocalDateTime updatedAt
+}
+
+class id.tu.service.domain.dto.event.BusinessEventResponseDTO {
+- Long id
+- String eventName
+- BusinessEventType eventType
+- String description
+- String customerName
+- String tokenCode
+- Double paymentAmount
+- LocalDateTime occurredAt
+- LocalDateTime createdAt
+}
+
+class id.tu.service.controller.RoleController {
+- RoleService roleService
++ ResponseEntity<RoleResponseDTO> createRole(RoleRequestCreateDTO)
++ ResponseEntity<RoleResponseDTO> updateRole(Long,RoleRequestUpdateDTO)
++ ResponseEntity<RoleResponseDTO> getRoleById(Long)
++ ResponseEntity<RoleResponseDTO> getRoleByName(String)
++ ResponseEntity<List<RoleResponseDTO>> getAllRoles()
++ ResponseEntity<Void> deleteRole(Long)
+}
+
+
+class id.tu.service.domain.dto.user.UserRequestUpdateDTO {
+- Long id
+- String username
+- String email
+- String password
+- Set<Long> roleIds
+- UserStatus status
+- Long updatedById
+}
+
+interface id.tu.service.domain.repository.UserRepository {
+~ Optional<User> findByUsername(String)
+~ boolean existsByEmail(String)
+}
+
+class id.tu.service.controller.UserController {
+- UserService userService
++ ResponseEntity<UserResponseDTO> createUser(UserRequestCreateDTO)
++ ResponseEntity<UserResponseDTO> updateUser(Long,UserRequestUpdateDTO)
++ ResponseEntity<UserResponseDTO> getUserById(Long)
++ ResponseEntity<UserResponseDTO> getUserByUsername(String)
++ ResponseEntity<List<UserResponseDTO>> getAllUsers()
++ ResponseEntity<Void> deleteUser(Long)
+}
+
+
+class id.tu.service.domain.service.impl.BusinessEventServiceImpl {
+- BusinessEventRepository eventRepository
+- BusinessEventMapper eventMapper
++ BusinessEventResponseDTO createEvent(BusinessEventCreateDTO)
++ List<BusinessEventResponseDTO> getAllEvents()
++ BusinessEventResponseDTO getEventById(Long)
+}
+
+
+class id.tu.service.domain.dto.payment.PaymentResponseDTO {
+- Long id
+- Long tokenId
+- String tokenCode
+- Long customerId
+- String customerName
+- Double energyUsage
+- Double amountPaid
+- Double ppn
+- Double ppj
+- Double materai
+- Double bankFee
+- Double serviceFee
+- Double total
+- PaymentMethod paymentMethod
+- String qris
+- PaymentStatus paymentStatus
+- PaymentPromo paymentPromo
+- LocalDateTime timestamp
+- String note
+}
+
+interface id.tu.service.domain.repository.PaymentRepository {
+~ List<Token> findAllByTokenId(Long)
+~ void deleteAllByTokenId(Long)
+}
+
+enum id.tu.service.domain.model.payment.PaymentStatus {
++  SUCCESS
+}
+
+class id.tu.service.domain.service.impl.RoleServiceImpl {
+- RoleRepository roleRepository
+- RoleMapper roleMapper
++ RoleResponseDTO createRole(RoleRequestCreateDTO)
++ RoleResponseDTO updateRole(Long,RoleRequestUpdateDTO)
++ RoleResponseDTO getRoleById(Long)
++ RoleResponseDTO getRoleByName(String)
++ List<RoleResponseDTO> getAllRoles()
++ void deleteRoleById(Long)
+}
+
+
+class id.tu.service.domain.init.CustomerDataInitializer {
+- CustomerRepository customerRepository
++ void run(String)
+}
+
+
+interface id.tu.service.domain.service.TokenService {
+~ TokenResponseDTO createToken(TokenRequestCreateDTO)
+~ TokenResponseDTO updateToken(Long,TokenRequestUpdateDTO)
+~ void deleteToken(Long)
+~ TokenResponseDTO getTokenById(Long)
+~ List<TokenResponseDTO> getAllTokens()
+}
+
+enum id.tu.service.domain.model.payment.PaymentPromo {
++  NO_PROMO
+}
+
+class id.tu.service.domain.dto.genco.GencoRequestUpdateDTO {
+- Long id
+- String name
+- String address
+- String contactNumber
+- String email
+- Boolean isActive
+}
+
+interface id.tu.service.domain.mapper.GencoMapper {
+~ Genco toEntity(GencoRequestCreateDTO)
+~ void updateEntity(Genco,GencoRequestUpdateDTO)
+~ GencoResponseDTO toResponseDTO(Genco)
+~ GencoResponseSimpleDTO toSimpleResponseDTO(Genco)
+~ List<GencoResponseSimpleDTO> toSimpleResponseDTOList(List<Genco>)
+}
+
+class id.tu.service.domain.dto.user.UserRequestCreateDTO {
+- String username
+- String email
+- String password
+- Set<Long> roleIds
+- UserStatus status
+- Long createdById
+}
+
+class id.tu.service.domain.model.payment.Payment {
+- Long id
+- Token token
+- Customer customer
+- Double energyUsage
+- Double amountPaid
+- Double ppn
+- Double ppj
+- Double materai
+- Double bankFee
+- Double serviceFee
+- Double total
+- PaymentMethod paymentMethod
+- String qris
+- PaymentStatus paymentStatus
+- PaymentPromo paymentPromo
+- LocalDateTime timestamp
+- String note
+# void onCreate()
+}
+
+
+enum id.tu.service.domain.model.user.UserStatus {
++  ACTIVE
++  INACTIVE
++  TERMINATE
+}
+
+interface id.tu.service.domain.service.BusinessEventService {
+~ BusinessEventResponseDTO createEvent(BusinessEventCreateDTO)
+~ List<BusinessEventResponseDTO> getAllEvents()
+~ BusinessEventResponseDTO getEventById(Long)
+}
+
+interface id.tu.service.domain.service.UserService {
+~ UserResponseDTO createUser(UserRequestCreateDTO)
+~ UserResponseDTO updateUser(Long,UserRequestUpdateDTO)
+~ UserResponseDTO getUserById(Long)
+~ UserResponseDTO getUserByUsername(String)
+~ List<UserResponseDTO> getAllUsers()
+~ void deleteUserById(Long)
+}
+
+class id.tu.service.TokenpayApp {
++ {static} void main(String[])
+}
+
+class id.tu.service.controller.AuthController {
+- AuthenticationManager authenticationManager
+- PasswordEncoder passwordEncoder
+- UserService userService
++ ResponseEntity<?> login(String,String)
++ ResponseEntity<?> logout(HttpServletRequest,HttpServletResponse)
+}
+
+
+class id.tu.service.domain.dto.token.TokenResponseDTO {
+- Long id
+- String tokenCode
+- Double amount
+- Double unitsPurchased
+- GencoResponseDTO genco
+- LocalDateTime createdAt
+- LocalDateTime expiresAt
+- TokenStatus tokenStatus
+- TokenType tokenType
+}
+
+enum id.tu.service.domain.model.payment.PaymentMethod {
++  BANK_TRANSFER
+}
+
+enum id.tu.service.domain.model.genco.GencoType {
+}
+class id.tu.service.domain.dto.genco.GencoResponseSimpleDTO {
+- Long id
+- String name
+- Boolean isActive
+}
+
+class id.tu.service.domain.service.impl.PaymentServiceImpl {
+- PaymentRepository paymentRepository
+- CustomerRepository customerRepository
+- TokenRepository tokenRepository
+- PaymentMapper paymentMapper
++ PaymentResponseDTO createPayment(PaymentRequestCreateDTO)
++ PaymentResponseDTO updatePayment(Long,PaymentRequestUpdateDTO)
++ void deletePayment(Long)
++ PaymentResponseDTO getPaymentById(Long)
++ List<PaymentResponseDTO> getAllPayments()
+}
+
+
+class id.tu.service.config.CustomUserDetailsService {
+- UserRepository userRepository
++ UserDetails loadUserByUsername(String)
+}
+
+
+class id.tu.service.domain.model.notif.BusinessEvent {
+- Long id
+- String eventName
+- BusinessEventType eventType
+- String description
+- Customer customer
+- Token tokenBill
+- Payment payment
+- LocalDateTime occurredAt
+- LocalDateTime createdAt
+# void onCreate()
+}
+
+
+class id.tu.service.domain.service.impl.TokenServiceImpl {
+- TokenRepository tokenRepository
+- GencoRepository gencoRepository
+- TokenMapper tokenMapper
++ TokenResponseDTO createToken(TokenRequestCreateDTO)
++ TokenResponseDTO updateToken(Long,TokenRequestUpdateDTO)
++ void deleteToken(Long)
++ TokenResponseDTO getTokenById(Long)
++ List<TokenResponseDTO> getAllTokens()
+}
+
+
+interface id.tu.service.domain.service.PaymentService {
+~ PaymentResponseDTO createPayment(PaymentRequestCreateDTO)
+~ PaymentResponseDTO updatePayment(Long,PaymentRequestUpdateDTO)
+~ void deletePayment(Long)
+~ PaymentResponseDTO getPaymentById(Long)
+~ List<PaymentResponseDTO> getAllPayments()
+}
+
+class id.tu.service.config.OpenAPIConfig {
+- String devUrl
+- String prodUrl
++ OpenAPI myOpenAPI()
+}
+
+
+class id.tu.service.domain.dto.customer.CustomerResponseDTO {
+- Long id
+- String name
+- String email
+- String phoneNumber
+- String address
+- String meterNumber
+- TariffType tariffType
+- Long gencoId
+- String gencoName
+- Boolean isActive
+- LocalDateTime createdAt
+- LocalDateTime updatedAt
+- CustomerType customerType
+- CustomerStatus customerStatus
+- String avatar
+- String note
+- Long userId
+- String userName
+- List<PaymentResponseSimpleDTO> payments
+}
+
+interface id.tu.service.domain.mapper.UserMapper {
+~ UserResponseDTO toResponseDTO(User)
+~ User toEntity(UserRequestCreateDTO)
+~ User toEntity(UserRequestUpdateDTO)
+~ void updateEntityFromDTO(UserRequestUpdateDTO,User)
+~ Set<Role> mapRoleIdsToRoles(Set<Long>)
+~ User mapToUser(Long)
+~ UserResponseSimpleDTO toUserResponseSimpleDTO(User)
+~ List<UserResponseSimpleDTO> toUserResponseSimpleDTOList(List<User>)
+}
+
+class id.tu.service.controller.CustomerController {
+- CustomerService customerService
++ ResponseEntity<CustomerResponseDTO> createCustomer(CustomerRequestCreateDTO)
++ ResponseEntity<CustomerResponseDTO> updateCustomer(Long,CustomerRequestUpdateDTO)
++ ResponseEntity<Void> deleteCustomer(Long)
++ ResponseEntity<CustomerResponseDTO> getCustomerById(Long)
++ ResponseEntity<List<CustomerResponseSimpleDTO>> getAllCustomers()
+}
+
+
+class id.tu.service.domain.model.user.User {
+- Long id
+- String username
+- String email
+- String password
+- UserStatus status
+- Set<Role> roles
+- LocalDateTime createdAt
+- LocalDateTime updatedAt
+- User createdBy
+- User updatedBy
+# void onCreate()
+# void onUpdate()
+}
+
+
+interface id.tu.service.domain.repository.TokenRepository {
+~ List<Token> findAllByGencoId(Long)
+~ void deleteAllByGencoId(Long)
+}
+
+class id.tu.service.domain.model.user.Role {
+- Long id
+- String name
+- String description
+- Set<User> users
+- LocalDateTime createdAt
+- LocalDateTime updatedAt
+- User createdBy
+- User updatedBy
+# void onCreate()
+# void onUpdate()
+}
+
+
+enum id.tu.service.domain.model.customer.CustomerStatus {
++  ACTIVE
++  INACTIVE
+}
+
+class id.tu.service.domain.model.customer.Customer {
+- Long id
+- String name
+- String email
+- String phoneNumber
+- String address
+- String meterNumber
+- TariffType tariffType
+- Genco genco
+- Boolean isActive
+- LocalDateTime createdAt
+- LocalDateTime updatedAt
+- CustomerType customerType
+- CustomerStatus customerStatus
+- String avatar
+- String note
+- User user
+- List<Payment> payments
+# void onCreate()
+# void onUpdate()
+}
+
+
+interface id.tu.service.domain.service.RoleService {
+~ RoleResponseDTO createRole(RoleRequestCreateDTO)
+~ RoleResponseDTO updateRole(Long,RoleRequestUpdateDTO)
+~ RoleResponseDTO getRoleById(Long)
+~ RoleResponseDTO getRoleByName(String)
+~ List<RoleResponseDTO> getAllRoles()
+~ void deleteRoleById(Long)
+}
+
+class id.tu.service.domain.dto.genco.GencoRequestCreateDTO {
+- String name
+- String address
+- String contactNumber
+- String email
+- Boolean isActive
+}
+
+enum id.tu.service.domain.model.token.TokenStatus {
++  ACTIVE
++  INACTIVE
+}
+
+class id.tu.service.domain.dto.user.UserResponseDTO {
+- Long id
+- String username
+- String password
+- String email
+- Set<RoleResponseDTO> roles
+- UserStatus status
+- LocalDateTime createdAt
+- LocalDateTime updatedAt
+- UserResponseSimpleDTO createdBy
+- UserResponseSimpleDTO updatedBy
+}
+
+class id.tu.service.config.CorsConfig {
++ CorsConfigurationSource corsConfigurationSource()
+}
+
+interface id.tu.service.domain.repository.CustomerRepository {
+~ Customer findByMeterNumber(String)
+~ Customer findByEmail(String)
+}
+
+class id.tu.service.domain.dto.customer.CustomerRequestCreateDTO {
+- String name
+- String email
+- String phoneNumber
+- String address
+- String meterNumber
+- TariffType tariffType
+- Long gencoId
+- CustomerType customerType
+- CustomerStatus customerStatus
+- String avatar
+- String note
+- Long userId
+}
+
+class id.tu.service.controller.TokenController {
+- TokenService tokenService
++ ResponseEntity<TokenResponseDTO> createToken(TokenRequestCreateDTO)
++ ResponseEntity<TokenResponseDTO> updateToken(Long,TokenRequestUpdateDTO)
++ ResponseEntity<Void> deleteToken(Long)
++ ResponseEntity<TokenResponseDTO> getTokenById(Long)
++ ResponseEntity<List<TokenResponseDTO>> getAllTokens()
+}
+
+
+class id.tu.service.domain.init.BusinessEventDataInitializer {
+- BusinessEventRepository eventRepository
+- CustomerRepository customerRepository
+- TokenRepository tokenRepository
+- PaymentRepository paymentRepository
++ void run(String)
+}
+
+
+class id.tu.service.domain.dto.role.RoleRequestCreateDTO {
+- String name
+- String description
+- Long createdById
+}
+
+class id.tu.service.domain.dto.event.BusinessEventCreateDTO {
+- String eventName
+- BusinessEventType eventType
+- String description
+- Long customerId
+- Long tokenBillId
+- Long paymentId
+- String occurredAt
+}
+
+class id.tu.service.domain.init.PaymentDataInitializer {
+- PaymentRepository paymentRepository
+- TokenRepository tokenRepository
+- CustomerRepository customerRepository
++ void run(String)
+}
+
+
+interface id.tu.service.domain.mapper.CustomerMapper {
+~ Customer toEntity(CustomerRequestCreateDTO)
+~ void updateEntity(Customer,CustomerRequestUpdateDTO)
+~ CustomerResponseDTO toResponseDTO(Customer)
+~ CustomerResponseSimpleDTO toSimpleResponseDTO(Customer)
+~ List<CustomerResponseSimpleDTO> toSimpleResponseDTOList(List<Customer>)
+~ List<PaymentResponseSimpleDTO> mapPayments(Customer)
+}
+
+interface id.tu.service.domain.service.GencoService {
+~ GencoResponseDTO createGenco(GencoRequestCreateDTO)
+~ GencoResponseDTO updateGenco(Long,GencoRequestUpdateDTO)
+~ void deleteGenco(Long)
+~ GencoResponseDTO getGencoById(Long)
+~ List<GencoResponseDTO> getAllGencos()
+}
+
+
+
+org.springframework.boot.CommandLineRunner <|.. id.tu.service.domain.init.GencoDataInitializer
+id.tu.service.domain.service.UserService <|.. id.tu.service.domain.service.impl.UserServiceImpl
+org.springframework.data.jpa.repository.JpaRepository <|-- id.tu.service.domain.repository.BusinessEventRepository
+org.springframework.data.jpa.repository.JpaRepository <|-- id.tu.service.domain.repository.RoleRepository
+id.tu.service.domain.service.CustomerService <|.. id.tu.service.domain.service.impl.CustomerServiceImpl
+org.springframework.security.core.userdetails.UserDetails <|.. id.tu.service.config.CustomUserDetails
+org.springframework.boot.CommandLineRunner <|.. id.tu.service.domain.init.UserDataInitializer
+org.springframework.boot.CommandLineRunner <|.. id.tu.service.domain.init.RoleDataInitializer
+org.springframework.boot.CommandLineRunner <|.. id.tu.service.domain.init.TokenDataInitializer
+id.tu.service.domain.service.GencoService <|.. id.tu.service.domain.service.impl.GencoServiceImpl
+org.springframework.data.jpa.repository.JpaRepository <|-- id.tu.service.domain.repository.GencoRepository
+org.springframework.data.jpa.repository.JpaRepository <|-- id.tu.service.domain.repository.UserRepository
+id.tu.service.domain.service.BusinessEventService <|.. id.tu.service.domain.service.impl.BusinessEventServiceImpl
+org.springframework.data.jpa.repository.JpaRepository <|-- id.tu.service.domain.repository.PaymentRepository
+id.tu.service.domain.service.RoleService <|.. id.tu.service.domain.service.impl.RoleServiceImpl
+org.springframework.boot.CommandLineRunner <|.. id.tu.service.domain.init.CustomerDataInitializer
+id.tu.service.domain.service.PaymentService <|.. id.tu.service.domain.service.impl.PaymentServiceImpl
+org.springframework.security.core.userdetails.UserDetailsService <|.. id.tu.service.config.CustomUserDetailsService
+id.tu.service.domain.service.TokenService <|.. id.tu.service.domain.service.impl.TokenServiceImpl
+org.springframework.data.jpa.repository.JpaRepository <|-- id.tu.service.domain.repository.TokenRepository
+org.springframework.data.jpa.repository.JpaRepository <|-- id.tu.service.domain.repository.CustomerRepository
+org.springframework.boot.CommandLineRunner <|.. id.tu.service.domain.init.BusinessEventDataInitializer
+org.springframework.boot.CommandLineRunner <|.. id.tu.service.domain.init.PaymentDataInitializer
+@enduml
