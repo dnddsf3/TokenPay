@@ -58,7 +58,7 @@ function LoginPage() {
             <main className="flex items-center justify-center p-6 sm:p-12 md:w-1/2">
               <div className="w-full">
                 <h1 className="mb-4 text-xl font-semibold text-gray-700 dark:text-gray-200">
-                  Tokenpay Secured
+                  Tokenpay Login
                 </h1>
                 <form onSubmit={onSubmit}>
                   <Label>
@@ -66,7 +66,7 @@ function LoginPage() {
                     <Input
                       className="mt-1"
                       type="text"
-                      placeholder="john_doe"
+                      placeholder="telyutizen123"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       required
