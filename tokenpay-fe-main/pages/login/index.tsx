@@ -66,7 +66,7 @@ function LoginPage() {
                     <Input
                       className="mt-1"
                       type="text"
-                      placeholder="telyutizen123"
+                      placeholder="Enter your SSO username"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       required
@@ -78,7 +78,7 @@ function LoginPage() {
                     <Input
                       className="mt-1"
                       type="password"
-                      placeholder="***************"
+                      placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
@@ -96,7 +96,7 @@ function LoginPage() {
                 </form>
 
                 <hr className="my-8" />
-
+                {/*}
                 <Button block layout="outline">
                   <GithubIcon className="w-4 h-4 mr-2" aria-hidden="true" />
                   Github
@@ -105,11 +105,11 @@ function LoginPage() {
                   <TwitterIcon className="w-4 h-4 mr-2" aria-hidden="true" />
                   Twitter
                 </Button>
-
-                <p className="mt-1 mx-auto flex justify-center">
+                */}
+                <p className="mt-4">
                   <Link
                     href="/signup"
-                    className="text-sm font-medium text-purple-600 dark:text-purple-400 hover:underline"
+                    className="text-sm font-medium text-red-600 dark:text-purple-400 hover:underline"
                   >
                     If you don't have an account, just create it!
                   </Link>

@@ -1,15 +1,14 @@
 import React, { useContext, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { GithubIcon, TwitterIcon } from "icons";
 import { Input, Label, Button, WindmillContext } from "@roketid/windmill-react-ui";
 import { useAuth } from "hooks/auth/auth-store";
 import { useRouter } from "next/router";
 
 function CreateAccount() {
   const { mode } = useContext(WindmillContext);
-  const { signup } = useAuth(); // Access the createUser function from the store
-  const imgSource = mode === 'dark' ? '/assets/img/telkom-bg.png' : '/assets/img/telkom-bg.png';
+  const { signup } = useAuth();
+  const imgSource = mode === "dark" ? "/assets/img/telkom-bg.png" : "/assets/img/telkom-bg.png";
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -18,7 +17,6 @@ function CreateAccount() {
   });
 
   const router = useRouter();
-
   const [error, setError] = useState("");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,7 +30,21 @@ function CreateAccount() {
   const handleSubmit = async () => {
     setError("");
 
-    // Validate passwords
+    // Validate email domain
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@(student\.telkomuniversity\.ac\.id|telkomuniversity\.ac\.id)$/;
+    if (!emailRegex.test(formData.email)) {
+      setError("Email invalid!");
+      return;
+    }
+
+    // Validate password length and complexity
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      setError("Password must be at least 8 characters long and include both letters and numbers.");
+      return;
+    }
+
+    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -45,7 +57,7 @@ function CreateAccount() {
     }
 
     try {
-      // Call createUser from the user store
+      // Call signup function
       await signup({
         username: formData.email.split("@")[0], // Use the email's username part as a default
         email: formData.email,
@@ -56,9 +68,7 @@ function CreateAccount() {
       });
 
       alert("Account created successfully!");
-
-      router.push('/login');
-
+      router.push("/login");
     } catch (error) {
       alert("Error!");
       console.error("Failed to create account:", error);
@@ -93,7 +103,7 @@ function CreateAccount() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  placeholder="telyutizen@email.com"
+                  placeholder="Enter your SSO email"
                 />
               </Label>
               <Label className="mt-4">
@@ -104,7 +114,7 @@ function CreateAccount() {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  placeholder="***************"
+                  placeholder="Enter your password"
                 />
               </Label>
               <Label className="mt-4">
@@ -115,7 +125,7 @@ function CreateAccount() {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  placeholder="***************"
+                  placeholder="Retype your password"
                 />
               </Label>
 
@@ -137,15 +147,6 @@ function CreateAccount() {
 
               <hr className="my-8" />
 
-              <Button block layout="outline">
-                <GithubIcon className="w-4 h-4 mr-2" aria-hidden="true" />
-                Github
-              </Button>
-              <Button block className="mt-4" layout="outline">
-                <TwitterIcon className="w-4 h-4 mr-2" aria-hidden="true" />
-                Twitter
-              </Button>
-
               <p className="mt-4">
                 <Link
                   href="/login"
@@ -163,4 +164,3 @@ function CreateAccount() {
 }
 
 export default CreateAccount;
-
