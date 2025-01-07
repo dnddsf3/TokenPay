@@ -1,7 +1,7 @@
 "use client"
 
 import { useUser } from "context/UserContext";
-import { PaymentCreateDTO } from "hooks/payment/payment-schema";
+import { PaymentCreateDTO, PaymentRetrieveDTO } from "hooks/payment/payment-schema";
 import { useTokenStore } from "hooks/token/token-store";
 import { useUserStore } from "hooks/user/user-store";
 import React, { useEffect, useState } from "react";
@@ -11,41 +11,57 @@ interface CompletionProps {
   onReset: () => void;
 }
 
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat("en-US", {
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat("id-ID", {
     style: "currency",
-    currency: "USD",
+    currency: "IDR",
     minimumFractionDigits: 2, // Ensures two decimal places
     maximumFractionDigits: 2,
   }).format(value);
 };
 
+
+
 const CompletionScreen: React.FC<CompletionProps> = ({ formData, onReset }) => {
 
+  //context
+  const { user } = useUser();
+  const userId = user?.userId || 0;
   const {
     tokenId,
-    amountPaid,
-    bankFee = 5000,
-    serviceFee = 2500,
-    materai = 10000,
-    customerId,
-    paymentMethod,
   } = formData;
 
-  const { users, fetchUserById } = useUserStore();
-  const { tokens, fetchTokens } = useTokenStore();
-  const { user } = useUser();
+
+  //const
   const [customerInfo, setCustomerInfo] = useState<{
     customerNumber: string;
     customerName: string;
     tariff: string;
   } | null>(null);
+
   const [tokenNumber, setTokenNumber] = useState<string>("");
+  const [tokenNominal, setTokenNominal] = useState<number>(0);
+  const [localAmountPaid, setLocalAmountPaid] = useState<number>(0);
 
-  const userId = user?.userId || 0;
-  const ppnRate = 0.1; // 10%
-  const ppjRate = 0.02; // 2%
 
+  //hook-token
+  const { tokens, fetchTokens } = useTokenStore();
+  useEffect(() => {
+    fetchTokens();
+  }, [fetchTokens]);
+
+  useEffect(() => {
+    if (tokens && tokenId) {
+      const matchingToken = tokens.find((token) => token.id === tokenId);
+      setTokenNumber(matchingToken?.tokenCode || "N/A");
+      setTokenNominal(matchingToken?.amount || 0);
+    }
+  }, [tokens, tokenId]);
+
+  //hook-users
+  const { users, fetchUserById } = useUserStore();
+
+  //hook-customer
   useEffect(() => {
     const fetchCustomerData = async () => {
       const _user = await fetchUserById(userId);
@@ -61,56 +77,14 @@ const CompletionScreen: React.FC<CompletionProps> = ({ formData, onReset }) => {
     fetchCustomerData();
   }, [userId, fetchUserById]);
 
-  useEffect(() => {
-    fetchTokens();
-  }, [fetchTokens]);
-
-  useEffect(() => {
-    if (tokens && tokenId) {
-      const matchingToken = tokens.find((token) => token.id === tokenId);
-      setTokenNumber(matchingToken?.tokenCode || "N/A");
-    }
-  }, [tokens, tokenId]);
-
-  // Corrected Calculations
-  const price = amountPaid / (1 + ppnRate + ppjRate); // Calculate base token price
-  const ppn = price * ppnRate;
-  const ppj = price * ppjRate;
-  const totalPayment = price + ppn + ppj + bankFee + serviceFee + materai;
-
-  // Fallbacks
-  const customerNumber = customerInfo?.customerNumber || "123456789";
-  const customerName = customerInfo?.customerName || "John Doe";
-  const tariff = customerInfo?.tariff || "R1/900VA";
+  //calculation
   const orderTime = new Date().toLocaleString();
-
-  //
-  const nominal = amountPaid || 0;
-
-  console.log("Debug Values:");
-  console.log("Bank Fee:", bankFee); // Should log 5000
-  console.log("Service Fee:", serviceFee); // Should log 5000
-  console.log("Materai:", materai); // Should log 10000
-  console.log("Total Payment:", totalPayment); // Should be correctly calculated
-
   useEffect(() => {
-    console.log("Debugging Fees and Total Payment:");
+    const TotalAmountPaid = tokenNominal * (1 + formData.ppn / 100 + formData.ppj / 100) +
+      formData.bankFee + formData.serviceFee + formData.materai;
+    setLocalAmountPaid(TotalAmountPaid);
+  }, [tokenNominal, formData.ppn, formData.ppj, formData.bankFee, formData.serviceFee, formData.materai]);
 
-    const debugBankFee = bankFee;
-    const debugServiceFee = serviceFee;
-    const debugMaterai = materai;
-    const debugTotalPayment = totalPayment;
-
-    console.log("Bank Fee (Raw):", debugBankFee);
-    console.log("Service Fee (Raw):", debugServiceFee);
-    console.log("Materai (Raw):", debugMaterai);
-    console.log("Total Payment (Raw):", debugTotalPayment);
-
-    console.log("Bank Fee (Formatted):", formatCurrency(debugBankFee));
-    console.log("Service Fee (Formatted):", formatCurrency(debugServiceFee));
-    console.log("Materai (Formatted):", formatCurrency(debugMaterai));
-    console.log("Total Payment (Formatted):", formatCurrency(debugTotalPayment));
-  }, [bankFee, serviceFee, materai, totalPayment]);
 
   return (
     <div className="max-w-lg mx-auto rounded-lg shadow-lg bg-white h-[80vh] overflow-auto">
@@ -131,11 +105,11 @@ const CompletionScreen: React.FC<CompletionProps> = ({ formData, onReset }) => {
               className="w-10 h-10"
             />
             <div>
-              <p className="font-medium">Token PLN {nominal}</p>
+              <p className="font-bold text-lg">Token PLN {tokenNominal}</p>
             </div>
           </div>
           <div className="mt-4">
-            <p className="text-sm font-medium text-gray-700">Nomor Token</p>
+            <p className="text-sm font-semibold text-gray-700">Nomor Token</p>
             <div className="bg-red-100 text-red-600 font-bold text-lg p-2 rounded-md flex justify-center items-center">
               <span>{tokenNumber}</span>
             </div>
@@ -146,19 +120,15 @@ const CompletionScreen: React.FC<CompletionProps> = ({ formData, onReset }) => {
         <div className="border rounded-lg p-4 space-y-2">
           <div className="flex justify-between">
             <span className="text-gray-700 font-medium">No. Pelanggan</span>
-            <span>{customerNumber}</span>
+            <span>{customerInfo?.customerNumber}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-700 font-medium">Nama Pelanggan</span>
-            <span>{customerName}</span>
+            <span>{customerInfo?.customerName}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-700 font-medium">Tarif Listrik</span>
-            <span>{tariff}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-700 font-medium">Nominal</span>
-            <span>{nominal}</span>
+            <span>{customerInfo?.tariff}</span>
           </div>
         </div>
 
@@ -169,34 +139,34 @@ const CompletionScreen: React.FC<CompletionProps> = ({ formData, onReset }) => {
             Informasi Pembayaran
           </p>
           <div className="flex justify-between">
-            <span className="text-gray-700 font-medium">Harga Token</span>
-            <span>{formatCurrency(price)}</span>
+            <span className="text-gray-700 font-medium">Token Nominal</span>
+            <span>{formatCurrency(tokenNominal)}</span>
 
           </div>
           <div className="flex justify-between">
             <span className="text-gray-700 font-medium">PPN</span>
-            <span>{formatCurrency(ppn)}</span>
+            <span>{formatCurrency(formData.ppn * tokenNominal / 100)}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-700 font-medium">PPJ</span>
-            <span>{formatCurrency(ppj)}</span>
+            <span>{formatCurrency(formData.ppj * tokenNominal / 100)}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-700 font-medium">Biaya Bank</span>
-            <span>{formatCurrency(bankFee)}</span>
+            <span>{formatCurrency(formData.bankFee)}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-700 font-medium">Biaya Layanan</span>
-            <span>{formatCurrency(serviceFee)}</span>
+            <span>{formatCurrency(formData.serviceFee)}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-700 font-medium">Materai</span>
-            <span>{formatCurrency(materai)}</span>
+            <span>{formatCurrency(formData.materai)}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-700 font-medium">Total Pembayaran</span>
             <span className="font-bold text-gray-900">
-              <span>{formatCurrency(totalPayment)}</span>
+              <span>{formatCurrency(localAmountPaid)}</span>
             </span>
           </div>
         </div>
@@ -209,7 +179,7 @@ const CompletionScreen: React.FC<CompletionProps> = ({ formData, onReset }) => {
           </div>
           <div className="flex justify-between">
             <span className="text-gray-700 font-medium">Metode Pembayaran</span>
-            <span>{paymentMethod}</span>
+            <span>{formData.paymentMethod}</span>
           </div>
         </div>
 

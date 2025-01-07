@@ -17,6 +17,7 @@ import { CopilotKitCSSProperties, CopilotPopup } from "@copilotkit/react-ui";
 import "@copilotkit/react-ui/styles.css";
 import { useCustomerStore } from "hooks/customer/customer-store";
 
+
 const paymentCategories = [
   {
     category: "eWallet",
@@ -39,10 +40,31 @@ const paymentCategories = [
       { id: 11, name: "BNI", description: "mBanking", imageUrl: "/assets/img/telkom-bg.png" },
       { id: 12, name: "BRI", description: "mBanking", imageUrl: "/assets/img/telkom-bg.png" },
       { id: 13, name: "DANAMON", description: "mBanking", imageUrl: "/assets/img/telkom-bg.png" },
-      { id: 14, name: "OTO", description: "mBanking", imageUrl: "/assets/img/telkom-bg.png" },
+      { id: 14, name: "OCTO", description: "mBanking", imageUrl: "/assets/img/telkom-bg.png" },
     ],
   },
 ];
+
+export interface PaymentFormData {
+  tokenId: number;
+  customerId: number;
+  userId: number;
+  wa: string;
+  energyUsage: number;
+  amountPaid: number;
+  ppn: number;
+  ppj: number;
+  materai: number;
+  bankFee: number;
+  serviceFee: number;
+  total: number;
+  paymentMethod: string;
+  qris: string;
+  paymentStatus: string;
+  paymentPromo: string;
+  note: string;
+}
+
 
 
 const initialNewPayment = () => ({
@@ -50,31 +72,49 @@ const initialNewPayment = () => ({
   customerId: 0,
   userId: 0,
   wa: "0878876464646",
-  energyUsage: 300,
-  amountPaid: 100,
-  ppn: 100,
-  ppj: 100,
-  materai: 100,
-  bankFee: 5,
-  serviceFee: 5,
-  total: 100,
+  energyUsage: 0,
+  amountPaid: 0,
+  ppn: 10, //%
+  ppj: 2,  //%
+  materai: 10000,
+  bankFee: 1500,
+  serviceFee: 1000,
+  total: 0,
   paymentMethod: "OVO",
-  qris: "---11---1--111--11",
+  qris: "qris_code",
   paymentStatus: "PENDING",
   paymentPromo: "NONE",
-  note: "---",
+  note: "This is a note",
 });
 
 
 
-const TokenPurchaseFormAdvanceAI: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState(initialNewPayment);
-  //
-  const { addPayment: createPayment, payments, fetchPayments } = usePaymentStore();
-  const { user } = useUser();
-  const { customers, fetchCustomers } = useCustomerStore()
 
+
+const TokenPurchaseFormAdvanceAI: React.FC = () => {
+
+  //context
+  const { user } = useUser();
+
+  //const
+  const [currentStep, setCurrentStep] = useState(0);
+  const [formData, setFormData] = useState<PaymentFormData>(initialNewPayment);
+  const { addPayment: createPayment, payments, fetchPayments } = usePaymentStore();
+  const { customers, fetchCustomers } = useCustomerStore()
+  const [nominalOptions, setNominalOptions] = useState<{
+    tokenId: number;
+    amount: number;
+    discountPrice: number;
+    originalPrice: number;
+    savings: number;
+    imageUrl: string;
+  }[]>([]);
+
+  //hooks
+  const { tokens, fetchTokens } = useTokenStore();
+
+
+  //handlers
   const handleFormUpdate = (key: string, value: any) => {
     console.log(`Updating ${key} to:`, value);
     setFormData((prev) => {
@@ -84,22 +124,22 @@ const TokenPurchaseFormAdvanceAI: React.FC = () => {
     });
   };
 
-  const [nominalOptions, setNominalOptions] = useState([]);
-  const { tokens, fetchTokens } = useTokenStore();
+
+  // init hooks
   useEffect(() => {
     fetchTokens();
     fetchCustomers();
     fetchPayments();
   }, [fetchTokens, fetchCustomers, fetchPayments]);
 
+
   useEffect(() => {
     if (tokens && tokens.length > 0) {
-      // Map tokens to the nominalOptions structure
       const mappedOptions = tokens.map((token) => ({
         tokenId: token.id,
         amount: token.amount,
-        discountPrice: token.amountEconomic || "---", // Fallback if discountPrice is not available
-        originalPrice: token.amount || "---", // Fallback if originalPrice is not available
+        discountPrice: token.amountEconomic || 0, // Fallback if discountPrice is not available
+        originalPrice: token.amount || 0, // Fallback if originalPrice is not available
         savings: (token.amountEconomic - token.amount) || 0, // Fallback if savings is not available
         imageUrl: "/assets/img/telkom-bg.png"
       }));
@@ -117,7 +157,6 @@ const TokenPurchaseFormAdvanceAI: React.FC = () => {
 
 
   // --- CopilotKit Integration ---
-  // Share readable state with CopilotKit
   useCopilotReadable({
     description: "The current step of the Token Purchase process.",
     value: currentStep,
@@ -294,7 +333,7 @@ const TokenPurchaseFormAdvanceAI: React.FC = () => {
     name: "confirmPurchase",
     description: "Confirm the purchase in the Token Purchase process.",
     handler: () => {
-      if (!formData.tokenId || !formData.tokenCode || !formData.amountPaid) {
+      if (!formData.tokenId || !formData.amountPaid) {
         console.error("Incomplete data. Cannot confirm purchase.");
         console.log("Ensure all required fields are filled before confirming.");
         return;
@@ -316,6 +355,8 @@ const TokenPurchaseFormAdvanceAI: React.FC = () => {
         required: true,
       },
     ],
+
+
     handler: ({ direction }) => {
       if (direction === "forward") {
         if (currentStep < 4) {
@@ -346,6 +387,7 @@ const TokenPurchaseFormAdvanceAI: React.FC = () => {
         ...formData,
         paymentStatus: "SUCCESS",
         userId: user?.userId || 0, // Ensure userId is added, with a default fallback
+        energyUsage: 100,
       };
 
       console.log("Submitting payment:", payload);
@@ -406,15 +448,16 @@ const TokenPurchaseFormAdvanceAI: React.FC = () => {
               <div className="mt-6">
                 {currentStep === 0 && (
                   <AccountInformationForm
-                    customerId={formData.customerId}
+                    customers={customers}
+                    seletedCustomer={formData.customerId}
                     onNext={handleNext}
-                    onUpdate={(key, value) => handleFormUpdate(key, value)}
+                    onSelect={(value) => handleFormUpdate("customerId", value)}
                   />
                 )}
                 {currentStep === 1 && (
                   <NominalSelection
-                    options={nominalOptions}
-                    selectedNominal={formData.tokenId}
+                    tokens={tokens}
+                    seletedToken={formData.tokenId}
                     onSelect={(value) => handleFormUpdate("tokenId", value)}
                     onNext={handleNext}
                     onBack={handleBack}
@@ -432,7 +475,7 @@ const TokenPurchaseFormAdvanceAI: React.FC = () => {
                 )}
                 {currentStep === 3 && (
                   <ConfirmationPurchase
-                    paymentData={formData}
+                    formData={formData}
                     onPurchase={handleSubmitPayment}
                     onApplyPromo={handleApplyPromo}
                     onViewAvailablePromos={handleViewAvailablePromos}

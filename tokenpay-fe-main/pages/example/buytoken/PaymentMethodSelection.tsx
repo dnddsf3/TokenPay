@@ -41,10 +41,6 @@ const PaymentMethodSelection: FC<PaymentMethodSelectionProps> = ({
     categories[0]?.category || ""
   );
 
-  useEffect(() => {
-    setLocalSelectedMethod(selectedMethod);
-    setLocalSelectedMethodName(selectedMethodName);
-  }, [selectedMethod, selectedMethodName]);
 
   const handleSelectMethod = (method: PaymentMethod) => {
     setLocalSelectedMethod(method);

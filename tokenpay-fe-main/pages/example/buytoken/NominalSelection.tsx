@@ -1,30 +1,36 @@
+import { TokenCreateDTO, TokenRetrieveDTO } from "hooks/token/token-schema";
 import React, { FC, useState } from "react";
 
 interface NominalOption {
   tokenId: number;
   amount: number;
-  discountPrice: string;
-  originalPrice: string;
-  savings: string;
+  discountPrice: number;
+  originalPrice: number;
+  savings: number;
   imageUrl: string;
 }
 
 interface NominalSelectionProps {
-  options: NominalOption[];
-  selectedNominal: number | null;
+  tokens: TokenRetrieveDTO[];
+  seletedToken: number | null;
   onSelect: (tokenId: number) => void;
   onNext: () => void;
   onBack: () => void;
+  tokenId?: number;
+
 }
 
 const NominalSelection: FC<NominalSelectionProps> = ({
-  options,
-  selectedNominal,
+  tokens,
+  seletedToken,
   onSelect,
   onNext,
   onBack,
 }) => {
-  const [localSelectedId, setLocalSelectedId] = useState<number | null>(selectedNominal);
+
+  const [localSelectedId, setLocalSelectedId] = useState<number | null>(
+    seletedToken || null
+  );
 
   const handleSelect = (tokenId: number) => {
     setLocalSelectedId(tokenId);
@@ -45,46 +51,47 @@ const NominalSelection: FC<NominalSelectionProps> = ({
 
       {/* Options Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
-        {options.map((option) => (
+        {tokens.map((token) => (
           <div
-            key={option.tokenId}
-            className={`bg-blue-50 border rounded-lg shadow hover:shadow-lg cursor-pointer p-4 transition ${localSelectedId === option.tokenId
+            key={token.id}
+            className={`bg-blue-50 border rounded-lg shadow hover:shadow-lg cursor-pointer p-4 transition ${localSelectedId === token.id
               ? "border-red-500 ring ring-red-500"
               : "border-gray-200"
               }`}
-            onClick={() => handleSelect(option.tokenId)}
-            aria-label={`Select ${option.amount} Token PLN`}
+            onClick={() => handleSelect(token.id)}
+            aria-label={`Select ${token.amount} Token PLN`}
             role="button"
             tabIndex={0}
-            onKeyPress={(e) => e.key === "Enter" && handleSelect(option.tokenId)}
+            onKeyPress={(e) => e.key === "Enter" && handleSelect(token.id)}
           >
             {/* Image */}
-            <div className="flex justify-center mb-4">
+            <div className="flex flex-col justify-center mb-4 items-center">
               <img
-                src={option.imageUrl}
-                alt={`${option.amount} Token PLN`}
+                src={"/assets/img/telkom-bg.png"}
+                alt={`${token.amount} Token PLN`}
                 className="h-12 w-12"
               />
+              <span className="text-xs font-bold mt-2">TELKOM ELECTRIC</span>
             </div>
 
             {/* Token Amount */}
             <h3 className="text-center text-lg font-bold text-gray-700 mb-1">
-              {option.amount.toLocaleString("id-ID")} TOKEN PLN
+              {token.amount}
             </h3>
 
             {/* Discount Price */}
             <p className="text-center text-md text-red-600 font-bold">
-              Harga Hemat Rp {option.discountPrice.toLocaleString("id-ID")}
+              Hemat Rp {token.amountEconomic}
             </p>
 
             {/* Original Price */}
             <p className="text-center text-sm text-gray-400 line-through">
-              Rp {option.originalPrice.toLocaleString("id-ID")}
+              Rp {token.amount}
             </p>
 
             {/* Savings */}
             <p className="text-center text-xs text-green-600 font-medium mt-2">
-              Hemat {option.savings.toLocaleString("id-ID")}
+              Hemat {token.amountEconomic - token.amount}
             </p>
           </div>
         ))}

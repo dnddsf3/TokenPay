@@ -30,6 +30,15 @@ import PaymentForm from "hooks/payment/PaymentForm";
 import { EditIcon, TrashIcon } from "icons";
 import { useUser } from "context/UserContext";
 
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 2, // Ensures two decimal places
+    maximumFractionDigits: 2,
+  }).format(value);
+};
+
 function PaymentTable() {
 
 
@@ -284,7 +293,7 @@ function PaymentTable() {
               <TableCell>Payment ID</TableCell>
               <TableCell>Token Code</TableCell>
               <TableCell>UserId</TableCell>
-              <TableCell>Amount Paid</TableCell>
+              <TableCell>Total Paid</TableCell>
               <TableCell>Nominal Token</TableCell>
               <TableCell>Payment Method</TableCell>
               <TableCell>Status</TableCell>
@@ -298,8 +307,8 @@ function PaymentTable() {
                 <TableCell>{payment.paymentId}</TableCell>
                 <TableCell>{payment.tokenCode}</TableCell>
                 <TableCell>{payment.userId}</TableCell>
-                <TableCell>{payment.amountPaid}</TableCell>
-                <TableCell>{payment.token?.amount}</TableCell>
+                <TableCell>{formatCurrency(payment.total)}</TableCell>
+                <TableCell>{formatCurrency(payment.token?.amount)}</TableCell>
                 <TableCell>{payment.paymentMethod}</TableCell>
                 <TableCell>
                   <Badge>{payment.paymentStatus}</Badge>

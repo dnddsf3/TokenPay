@@ -4,33 +4,48 @@ import { useUser } from "context/UserContext";
 import { PaymentCreateDTO } from "hooks/payment/payment-schema";
 import { useTokenStore } from "hooks/token/token-store";
 import React, { useEffect, useState } from "react";
+import { PaymentFormData } from ".";
 
 interface ConfirmationPurchaseProps {
-  paymentData: PaymentCreateDTO;
+  formData: PaymentFormData;
   onPurchase: () => void;
   onBack: () => void;
   onApplyPromo: (promoCode: string) => void;
   onViewAvailablePromos: () => void;
 }
 
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 2, // Ensures two decimal places
+    maximumFractionDigits: 2,
+  }).format(value);
+};
+
 const ConfirmationPurchase: React.FC<ConfirmationPurchaseProps> = ({
-  paymentData,
+  formData,
   onApplyPromo,
   onViewAvailablePromos,
   onPurchase,
   onBack,
 }) => {
-  const { tokenId } = paymentData; // Extract tokenId from paymentData
-  const [formData, setFormData] = useState(paymentData);
-  const { tokens, fetchTokens } = useTokenStore(); // Assuming useTokenStore returns tokens
-  const ppnRate: number = 0.1; // 10%
-  const ppjRate: number = 0.02; // 2%
-  const bankFee: number = 1000.00;
-  const serviceFee: number = 2500.00;
-  const materai: number = 10000.00;
 
+  const [localFormData, setLocalFormData] = useState(formData);
+  const [localTokenValue, setLocalTokenValue] = useState<number>(0);
+  const [localAmountPaid, setLocalAmountPaid] = useState<number>(0);
+
+  const { tokenId } = formData; // Extract tokenId from paymentData
+  const { tokens, fetchTokens } = useTokenStore(); // Assuming useTokenStore returns tokens
   const { user } = useUser();
 
+  //const fee calculation
+  const ppnRate: number = formData.ppn / 100; // in %
+  const ppjRate: number = formData.ppj / 100; // in %
+  const bankFee: number = formData.bankFee;
+  const serviceFee: number = formData.serviceFee;
+  const materai: number = formData.materai;
 
   useEffect(() => {
     fetchTokens();
@@ -58,22 +73,24 @@ const ConfirmationPurchase: React.FC<ConfirmationPurchaseProps> = ({
 
       const tokenValue = matchingToken ? matchingToken.amount : 0;
       console.log("Token value:", tokenValue);
+      setLocalTokenValue(tokenValue);
 
-      const newPpn = tokenValue * ppnRate;
-      const newPpj = tokenValue * ppjRate;
-      const newAmountPaid =
-        tokenValue + newPpn + newPpj + bankFee + serviceFee + materai;
+      const valPPN = tokenValue * ppnRate;
+      const valPPJ = tokenValue * ppjRate;
 
-      console.log("Calculated PPN:", newPpn);
-      console.log("Calculated PPJ:", newPpj);
-      console.log("Calculated total amount paid:", newAmountPaid);
+      const TotalAmountPaid = tokenValue * (1 + formData.ppn / 100 + formData.ppj / 100) +
+        formData.bankFee + formData.serviceFee + formData.materai;
+      setLocalAmountPaid(TotalAmountPaid);
 
-      setFormData((prev) => ({
+      // Update formData with the new amountPaid
+      formData.amountPaid = tokenValue;
+      formData.energyUsage = TotalAmountPaid * 0.9;
+      formData.total = TotalAmountPaid;
+
+
+      setLocalFormData((prev: any) => ({
         ...prev,
-        tokenValue,
-        ppn: newPpn,
-        ppj: newPpj,
-        amountPaid: newAmountPaid,
+        amount: tokenValue,
       }));
     } else {
       if (!tokens || tokens.length === 0) {
@@ -83,13 +100,13 @@ const ConfirmationPurchase: React.FC<ConfirmationPurchaseProps> = ({
         console.warn("Token ID is not provided");
       }
     }
-  }, [tokens, tokenId, ppnRate, ppjRate, bankFee, serviceFee, materai]);
+  }, [tokens, tokenId, bankFee, serviceFee, materai]);
 
 
 
   // Function to update specific fields in formData
   const handleFormUpdate = (key: string, value: any) => {
-    setFormData((prev) => ({
+    setLocalFormData((prev: any) => ({
       ...prev,
       [key]: value,
     }));
@@ -127,8 +144,8 @@ const ConfirmationPurchase: React.FC<ConfirmationPurchaseProps> = ({
           <label className="block text-sm font-medium text-gray-700">
             Nominal Token
           </label>
-          <p className="mt-1 text-lg font-bold text-gray-800">
-            {formData.tokenValue} TOKEN PLN
+          <p className="mt-1 text-2xl font-bold text-gray-800">
+            {localTokenValue}
           </p>
         </div>
 
@@ -146,49 +163,49 @@ const ConfirmationPurchase: React.FC<ConfirmationPurchaseProps> = ({
               placeholder="Masukkan kode promo"
             />
             <button
-              className="bg-blue-500 text-white px-4 py-2 rounded-md text-sm"
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm"
               onClick={() => onApplyPromo(formData.paymentPromo)}
             >
               Gunakan
             </button>
           </div>
           <div
-            className="mt-2 text-blue-500 flex items-center space-x-2 cursor-pointer"
+            className="mt-2 text-red-500 flex items-center space-x-2 cursor-pointer"
             onClick={onViewAvailablePromos}
           >
-            <span>🎉 Promo yang tersedia</span>
+            {/* <span>🎉 Promo yang tersedia</span> */}
           </div>
         </div>
 
         {/* Fees and Taxes */}
         <div className="flex justify-between items-center">
-          <span className="text-gray-700 font-medium">PPN</span>
+          <span className="text-gray-700 font-medium">PPN 10%</span>
           <span className="text-blue-500 font-medium">
-            Rp {formData.ppn.toLocaleString("id-ID")}
+            Rp {formData.ppn / 100 * localTokenValue}
           </span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-gray-700 font-medium">PPJ</span>
+          <span className="text-gray-700 font-medium">PPJ 2%</span>
           <span className="text-blue-500 font-medium">
-            Rp {formData.ppj.toLocaleString("id-ID")}
+            Rp {formData.ppj / 100 * localTokenValue}
           </span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-gray-700 font-medium">Materai</span>
           <span className="text-blue-500 font-medium">
-            Rp {formData.materai.toLocaleString("id-ID")}
+            Rp {formData.materai}
           </span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-gray-700 font-medium">Biaya Bank</span>
           <span className="text-blue-500 font-medium">
-            Rp {formData.bankFee.toLocaleString("id-ID")}
+            Rp {formData.bankFee}
           </span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-gray-700 font-medium">Biaya Layanan</span>
           <span className="text-blue-500 font-medium">
-            Rp {formData.serviceFee.toLocaleString("id-ID")}
+            Rp {formData.serviceFee}
           </span>
         </div>
 
@@ -196,7 +213,7 @@ const ConfirmationPurchase: React.FC<ConfirmationPurchaseProps> = ({
         <div className="flex justify-between items-center">
           <span className="text-gray-700 font-medium">Total Pembayaran</span>
           <span className="text-gray-900 font-bold text-lg">
-            Rp {formData.amountPaid.toLocaleString("id-ID")}
+            Rp {localAmountPaid}
           </span>
         </div>
 

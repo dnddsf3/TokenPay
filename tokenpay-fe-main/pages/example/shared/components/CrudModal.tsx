@@ -18,7 +18,7 @@ const CrudModal: React.FC<CrudModalProps> = ({ isOpen, onClose, title, children,
         <Button layout="outline" onClick={onClose}>
           Cancel
         </Button>
-        <Button onClick={onSave}>Save</Button>
+        <Button onClick={onSave}>Delete</Button>
       </ModalFooter>
     </Modal>
   );

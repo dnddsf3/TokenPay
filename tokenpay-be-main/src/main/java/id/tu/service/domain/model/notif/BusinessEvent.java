@@ -37,6 +37,7 @@ public class BusinessEvent {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "token_id", nullable = true)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private Token tokenBill;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -4,22 +4,27 @@ import React, { useEffect, useState } from "react";
 import { useCopilotAction, useCopilotReadable } from "@copilotkit/react-core";
 import { useCustomerStore } from "hooks/customer/customer-store";
 import { Button, Select } from "@roketid/windmill-react-ui";
+import { useUser } from "context/UserContext";
 
 interface AccountInformationFormProps {
-  customerId?: number;
+  seletedCustomer: number;
+  customers: any;
   onNext: (value: number) => void;
   onCancel?: () => void;
-  onUpdate?: (key: string, value: any) => void; // Add onUpdate prop
+  onSelect?: (value: any) => void; // Add onUpdate prop
 }
 
 const AccountInformationForm: React.FC<AccountInformationFormProps> = ({
-  customerId,
+  seletedCustomer,
+  customers,
   onNext,
   onCancel,
-  onUpdate, // Receive onUpdate as a prop
+  onSelect, // Receive onUpdate as a prop
 }) => {
-  const { customers, fetchCustomers } = useCustomerStore();
-  const [selectedCustomer, setSelectedCustomer] = useState<number | null>(customerId || null);
+  const [selectedCustomer, setSelectedCustomer] = useState<number | null>(seletedCustomer || null);
+
+  //context
+  const { user } = useUser();
 
   // Provide readable data for Copilot to understand the state of the form
   useCopilotReadable({
@@ -41,7 +46,7 @@ const AccountInformationForm: React.FC<AccountInformationFormProps> = ({
     ],
     handler: ({ customerId }) => {
       setSelectedCustomer(customerId);
-      onUpdate?.("customerId", customerId); // Trigger onUpdate when value changes
+      onSelect?.("customerId"); // Trigger onUpdate when value changes
     },
   });
 
@@ -57,14 +62,13 @@ const AccountInformationForm: React.FC<AccountInformationFormProps> = ({
     },
   });
 
-  useEffect(() => {
-    fetchCustomers();
-  }, [fetchCustomers]);
+
 
   const handleCustomerChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const value = Number(event.target.value);
     setSelectedCustomer(value);
-    onUpdate?.("customerId", value); // Trigger onUpdate when value changes
+    onSelect?.(value); // Trigger onUpdate when value changes
+    FormData.userId
   };
 
   return (
@@ -81,12 +85,15 @@ const AccountInformationForm: React.FC<AccountInformationFormProps> = ({
             className="mt-2"
             value={selectedCustomer || ""}
             onChange={handleCustomerChange}
-            aria-label="No. Meter/ID Pel"
+            aria-label="Nomor Pelanggan"
+            placeholder="Pilih pelanggan..."
+            onPointerEnterCapture={undefined}
+            onPointerLeaveCapture={undefined}
           >
             <option value="" disabled>
               Pilih pelanggan...
             </option>
-            {customers.map((customer) => (
+            {customers.map((customer: any) => (
               <option key={customer.id} value={customer.id}>
                 {customer.name} - {customer.meterNumber}
               </option>

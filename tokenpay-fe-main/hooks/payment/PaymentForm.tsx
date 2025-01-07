@@ -25,7 +25,7 @@ const PaymentForm = ({
         <ValidatedInput
           label="Customer"
           value={editingPayment?.customerId || 0} // Ensure customerId is numeric
-          onChange={(value) => onChange("customerId", parseInt(value))} // Parse value to integer
+          onChange={(value) => onChange("customerId", parseInt(String(value)))}// Parse value to integer
           error={errors.customerId}
           type="select"
           options={[
@@ -41,7 +41,7 @@ const PaymentForm = ({
         <ValidatedInput
           label="Token"
           value={editingPayment?.tokenId || 0} // Ensure tokenId is numeric
-          onChange={(value) => onChange("tokenId", parseInt(value))} // Parse value to integer
+          onChange={(value) => onChange("tokenId", parseInt(String(value)))} // Parse value to integer
           error={errors.tokenId}
           type="select"
           options={[
@@ -80,7 +80,7 @@ const PaymentForm = ({
             { value: "BNI", label: "BNI" },
             { value: "BRI", label: "BRI" },
             { value: "DANAMON", label: "DANAMON" },
-            { value: "OTO", label: "OTO" },
+            { value: "OCTO", label: "OCTO" },
           ]}
         />
 
@@ -103,7 +103,7 @@ const PaymentForm = ({
         <ValidatedInput
           label="Amount Paid"
           value={editingPayment?.amountPaid || ""}
-          onChange={(value) => onChange("amountPaid", parseFloat(value))}
+          onChange={(value) => onChange("amountPaid", parseFloat(String(value)))}
           error={errors.amountPaid}
           type="number"
         />
@@ -112,7 +112,7 @@ const PaymentForm = ({
         <ValidatedInput
           label="Energy Usage"
           value={editingPayment?.energyUsage || ""}
-          onChange={(value) => onChange("energyUsage", parseFloat(value))}
+          onChange={(value) => onChange("energyUsage", parseFloat(String(value)))}
           error={errors.energyUsage}
           type="number"
         />
@@ -121,7 +121,7 @@ const PaymentForm = ({
         <ValidatedInput
           label="Total"
           value={editingPayment?.total || ""}
-          onChange={(value) => onChange("total", parseFloat(value))}
+          onChange={(value) => onChange("total", parseFloat(String(value)))}
           error={errors.total}
           type="number"
         />
@@ -130,7 +130,7 @@ const PaymentForm = ({
         <ValidatedInput
           label="Bank Fee"
           value={editingPayment?.bankFee || ""}
-          onChange={(value) => onChange("bankFee", parseFloat(value))}
+          onChange={(value) => onChange("bankFee", parseFloat(String(value)))}
           error={errors.bankFee}
           type="number"
         />
@@ -139,7 +139,7 @@ const PaymentForm = ({
         <ValidatedInput
           label="Materai"
           value={editingPayment?.materai || ""}
-          onChange={(value) => onChange("materai", parseFloat(value))}
+          onChange={(value) => onChange("materai", parseFloat(String(value)))}
           error={errors.materai}
           type="number"
         />
@@ -157,7 +157,7 @@ const PaymentForm = ({
         <ValidatedInput
           label="PPJ"
           value={editingPayment?.ppj || ""}
-          onChange={(value) => onChange("ppj", parseFloat(value))}
+          onChange={(value) => onChange("ppj", parseFloat(String(value)))}
           error={errors.ppj}
           type="number"
         />
@@ -166,7 +166,7 @@ const PaymentForm = ({
         <ValidatedInput
           label="PPN"
           value={editingPayment?.ppn || ""}
-          onChange={(value) => onChange("ppn", parseFloat(value))}
+          onChange={(value) => onChange("ppn", parseFloat(String(value)))}
           error={errors.ppn}
           type="number"
         />
@@ -183,7 +183,7 @@ const PaymentForm = ({
         <ValidatedInput
           label="Service Fee"
           value={editingPayment?.serviceFee || ""}
-          onChange={(value) => onChange("serviceFee", parseFloat(value))}
+          onChange={(value) => onChange("serviceFee", parseFloat(String(value)))}
           error={errors.serviceFee}
           type="number"
         />

@@ -548,6 +548,18 @@ function TokenTable() {
         </Modal>
       )}
 
+      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)}>
+        <ModalHeader>Delete Token</ModalHeader>
+        <ModalBody>Are you sure you want to delete the token?</ModalBody>
+        <ModalFooter>
+          <Button layout="outline" onClick={() => setIsDeleteModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteToken}>Delete</Button>
+        </ModalFooter>
+      </Modal>
+
+
     </Layout>
   );
 }

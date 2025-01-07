@@ -36,6 +36,7 @@ const paymentCategories = [
 const nominalOptions = [
   {
     id: 1,
+    tokenId: 1,
     amount: 20000,
     discountPrice: "21.200",
     originalPrice: "24.300",
@@ -44,6 +45,7 @@ const nominalOptions = [
   },
   {
     id: 2,
+    tokenId: 2,
     amount: 50000,
     discountPrice: "52.700",
     originalPrice: "55.800",
@@ -52,6 +54,7 @@ const nominalOptions = [
   },
   {
     id: 3,
+    tokenId: 3,
     amount: 100000,
     discountPrice: "105.200",
     originalPrice: "108.300",
@@ -60,6 +63,7 @@ const nominalOptions = [
   },
   {
     id: 4,
+    tokenId: 4,
     amount: 200000,
     discountPrice: "210.200",
     originalPrice: "213.300",
@@ -68,20 +72,80 @@ const nominalOptions = [
   },
 ];
 
-const TokenPurchaseForm: React.FC = () => {
+interface PaymentMethod {
+  id: number;
+  name: string;
+  description: string;
+  imageUrl: string;
+}
+
+interface NominalOption {
+  id: number;
+  tokenId: number;
+  amount: number;
+  discountPrice: string;  // Change to string only
+  originalPrice: string;  // Change to string only
+  savings: string;        // Change to string only
+  imageUrl: string;
+}
+
+interface FormState {
+  tokenId: number; // Payment token ID
+  customerId: number; // Customer ID
+  userId?: number | null; // User ID (optional)
+  whatsappNumber: string | null; // WhatsApp number (maps to `wa`)
+  energyUsage: number; // Energy usage
+  amountPaid: number; // Amount paid
+  ppn: number; // PPN
+  ppj: number; // PPJ
+  materai: number; // Materai
+  bankFee: number; // Bank fee
+  serviceFee: number; // Service fee
+  totalPayment: number; // Total payment (maps to `total`)
+  paymentMethod: PaymentMethod | null; // Payment method
+  qris?: string | null; // QRIS
+  paymentStatus: string; // Payment status
+  promoCode?: string | null; // Promo code (maps to `paymentPromo`)
+  note?: string | null; // Note
+  adminFee: number | null; // Admin fee (additional field)
+  tokenNumber: string | null; // Token number
+  customerName: string; // Customer name
+  tariff: string; // Tariff information
+  errors?: Record<string, string>; // For validation
+}
+
+
+interface TokenPurchaseFormProps {
+  defaultWhatsapp?: string;
+}
+
+const TokenPurchaseForm: React.FC<TokenPurchaseFormProps> = ({ defaultWhatsapp }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState({
-    accountNumber: "",
-    selectedNominal: null,
+  const [formData, setFormData] = useState<FormState>({
+    tokenId: 0, // Initialize with a default positive number (required by schema)
+    customerId: 0, // Initialize with a default positive number
+    userId: null, // Optional, can be null
+    whatsappNumber: defaultWhatsapp || "",
+    energyUsage: 0, // Default to 0 as a starting point
+    amountPaid: 0,
+    ppn: 0,
+    ppj: 0,
+    materai: 0,
+    bankFee: 0,
+    serviceFee: 0,
+    totalPayment: 0, // Maps to `total`
     paymentMethod: null,
-    whatsappNumber: "6281234567890",
+    qris: null,
+    paymentStatus: "",
     promoCode: "",
-    totalPayment: 0,
-    adminFee: 0,
-    tokenNumber: "",
-    customerName: "Di*** *****ra",
-    tariff: "RIM / 900 VA",
+    note: null, // Nullable optional field
+    adminFee: null,
+    tokenNumber: null,
+    customerName: "",
+    tariff: "",
+    errors: {}
   });
+
 
   const handleFormUpdate = (key: string, value: any) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -95,13 +159,17 @@ const TokenPurchaseForm: React.FC = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 0)); // Ensure it doesn't go below the first step
   };
 
+
+  function handleReset(): void {
+    throw new Error("Function not implemented.");
+  }
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
 
       <div
         className="bg-white shadow-md rounded-lg p-6 w-full max-w-screen-md min-h-[95vh] flex flex-col"
       >
-
         <Stepper
           steps={[
             { title: "Input Account" },
@@ -122,7 +190,7 @@ const TokenPurchaseForm: React.FC = () => {
         <div className="mt-4">
           {currentStep === 0 && (
             <AccountInformationForm
-              meterNumber={formData.accountNumber}
+              customerId={formData.customerId}
               onNext={() => handleNext()}
             />
           )}
@@ -142,6 +210,7 @@ const TokenPurchaseForm: React.FC = () => {
             <PaymentMethodSelection
               categories={paymentCategories}
               selectedMethod={formData.paymentMethod} // Pass the currently selected method
+              selectedMethodName={formData.paymentMethod?.name || ""}
               onSelect={(method) => handleFormUpdate("paymentMethod", method)} // Update the selected method
               onNext={handleNext} // Advance to the next step when "Next" is clicked
               onBack={handleBack} // Go back to the previous step
@@ -152,11 +221,11 @@ const TokenPurchaseForm: React.FC = () => {
 
           {currentStep === 3 && (
             <ConfirmationPurchase
-              defaultWhatsAppNumber={formData.whatsappNumber}
-              promoCode={formData.promoCode}
-              totalBill={formData.totalPayment}
+              defaultWhatsAppNumber={formData.whatsappNumber || ""}
+              promoCode={formData.promoCode || ""}
+              totalBill={formData.totalPayment || 0}
               adminFee={formData.adminFee || 1000}
-              selectedNominalToken={formData.selectedNominal || 0} // Pass selected nominal
+              selectedNominalToken={formData.selectedNominal?.tokenId || 0} // Use tokenId instead// Pass selected nominal
               onPurchase={() => {
                 handleFormUpdate("tokenNumber", "3764 5107 6744 0134 9435");
                 handleNext();
@@ -164,28 +233,30 @@ const TokenPurchaseForm: React.FC = () => {
               onBack={handleBack} // Pass onBack for the Back button
               onApplyPromo={(promo) => console.log("Applying promo:", promo)}
               onViewAvailablePromos={() => console.log("Viewing available promos")}
+              paymentData={formData}
             />
           )}
-
 
 
           {currentStep === 4 && (
             <CompletionScreen
-              tokenNumber={formData.tokenNumber}
-              customerNumber={formData.accountNumber}
-              customerName={formData.customerName}
-              tariff={formData.tariff}
+              tokenNumber={formData.tokenNumber || ""}
+              customerNumber={formData.accountNumber || ""}
+              customerName={formData.customerName || ""}
+              tariff={formData.tariff || ""}
               nominal={formData.selectedNominal?.toString() || ""}
-              price={formData.totalPayment - formData.adminFee}
-              adminFee={formData.adminFee}
-              totalPayment={formData.totalPayment}
-              orderTime={new Date().toLocaleString()}
-              paymentMethod={formData.paymentMethod?.name || ""}
+              price={(formData.totalPayment || 0) - (formData.adminFee || 0)}
+              adminFee={formData.adminFee || 0}
+              totalPayment={formData.totalPayment || 0}
+              paymentMethodName={formData.paymentMethod?.name || ""}
+              formData={formData}
+              onReset={() => {
+                setCurrentStep(1);
+              }}
             />
           )}
         </div>
       </div>
-
     </div>
 
   );

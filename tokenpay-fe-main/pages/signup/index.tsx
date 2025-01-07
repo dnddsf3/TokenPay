@@ -93,7 +93,7 @@ function CreateAccount() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  placeholder="john@doe.com"
+                  placeholder="telyutizen@email.com"
                 />
               </Label>
               <Label className="mt-4">
